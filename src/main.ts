@@ -9,6 +9,7 @@ import { SceneManager } from './engine/scene';
 import { Leaderboard } from './systems/leaderboard';
 import type { GameContext } from './engine/context';
 import { TitleScene } from './scenes/title';
+import { MobileBlockScene } from './scenes/mobileblock';
 import './style.css';
 
 import heroMage from './assets/sprites/hero_mage.png';
@@ -87,7 +88,12 @@ function boot(): void {
 
   input.attachTouch(canvas);
 
-  scenes.switchTo(new TitleScene(context));
+  const isTouchOnly = window.matchMedia('(pointer: coarse)').matches && !window.matchMedia('(any-pointer: fine)').matches;
+  if (isTouchOnly) {
+    scenes.switchTo(new MobileBlockScene());
+  } else {
+    scenes.switchTo(new TitleScene(context));
+  }
 
   const update = (dt: number): void => {
     input.poll();
