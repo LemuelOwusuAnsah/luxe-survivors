@@ -12,6 +12,7 @@ import type { Upgrade } from '../data/upgrades';
 import type { Scene } from '../engine/scene';
 import type { GameContext } from '../engine/context';
 import { TitleScene } from './title';
+import { Hints } from '../ui/hints';
 
 type State = 'playing' | 'levelup' | 'paused' | 'dead';
 
@@ -35,6 +36,7 @@ export class GameScene implements Scene {
   private fpsAccum: number;
   private fpsFrames: number;
   private fpsDisplay: number;
+  private hints: Hints;
 
   constructor(ctx: GameContext, heroId: string) {
     this.ctx = ctx;
@@ -44,6 +46,7 @@ export class GameScene implements Scene {
     this.fpsAccum = 0;
     this.fpsFrames = 0;
     this.fpsDisplay = 0;
+    this.hints = new Hints();
     const found = HEROES.find((h) => h.id === heroId);
     this.hero = found ?? HEROES[0];
   }
@@ -163,17 +166,27 @@ export class GameScene implements Scene {
         input.wasPressed('KeyO')
       ) {
         this.confirmUpgrade();
-      } else {
+      } else if (input.mouseMovedThisFrame) {
         const c = this.toCanvasCoords();
         const moused = this.levelUi.hitTest(c.x, c.y);
         if (moused) {
           const idx = this.offers.findIndex((u) => u.id === moused.id);
-          if (idx >= 0 && idx !== this.selectedIndex) {
+          if (idx >= 0) {
             this.selectedIndex = idx;
             this.hover = this.offers[this.selectedIndex];
           }
         }
-        if (input.wasClicked() && moused) {
+      }
+
+      if (input.wasClicked()) {
+        const c2 = this.toCanvasCoords();
+        const moused2 = this.levelUi.hitTest(c2.x, c2.y);
+        if (moused2) {
+          const idx2 = this.offers.findIndex((u) => u.id === moused2.id);
+          if (idx2 >= 0) {
+            this.selectedIndex = idx2;
+            this.hover = this.offers[this.selectedIndex];
+          }
           this.confirmUpgrade();
         }
       }
@@ -262,9 +275,14 @@ export class GameScene implements Scene {
       ctx.font = '12px PressStart2P, monospace';
       ctx.fillText('Y  -  MAIN MENU', w / 2, h / 2 + 35);
 
-      ctx.fillStyle = 'rgba(248,250,252,0.5)';
-      ctx.font = '9px PressStart2P, monospace';
-      ctx.fillText('ESC OR P ALSO RESUMES', w / 2, h / 2 + 95);
+      this.hints.draw(
+        ctx,
+        [
+          { keys: 'X / PAD A', action: 'RESUME' },
+          { keys: 'Y / PAD Y', action: 'MAIN MENU' },
+        ],
+        h / 2 + 95
+      );
       ctx.textAlign = 'left';
     }
 

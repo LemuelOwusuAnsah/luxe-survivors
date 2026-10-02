@@ -1,6 +1,7 @@
 import { CONFIG } from '../config';
 import type { Upgrade } from '../data/upgrades';
 import type { SpriteSheet } from '../engine/sprites';
+import { Hints } from './hints';
 
 export interface CardRect {
   x: number;
@@ -12,9 +13,11 @@ export interface CardRect {
 
 export class LevelUpUi {
   cards: CardRect[];
+  private hints: Hints;
 
   constructor() {
     this.cards = [];
+    this.hints = new Hints();
   }
 
   layout(upgrades: Upgrade[]): void {
@@ -97,9 +100,15 @@ export class LevelUpUi {
       this.wrapText(ctx, c.upgrade.description, c.x + c.w / 2, c.y + 175, c.w - 30, 18);
     }
 
-    ctx.fillStyle = 'rgba(248,250,252,0.55)';
-    ctx.font = '9px PressStart2P, monospace';
-    ctx.fillText('ARROWS TO PICK   ENTER TO CONFIRM', CONFIG.canvas.width / 2, CONFIG.canvas.height - 40);
+    this.hints.draw(
+      ctx,
+      [
+        { keys: 'ARROWS', action: 'PICK' },
+        { keys: 'ENTER', action: 'CONFIRM' },
+        { keys: 'PAD A', action: 'CONFIRM' },
+      ],
+      CONFIG.canvas.height - 34
+    );
 
     ctx.textAlign = 'left';
   }

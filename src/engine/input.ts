@@ -7,6 +7,9 @@ export class Input {
   mouseY: number;
   private clickedThisFrame: boolean;
   private pad: GamepadInput;
+  private lastMouseX: number;
+  private lastMouseY: number;
+  mouseMovedThisFrame: boolean;
 
   constructor() {
     this.keys = new Set();
@@ -15,6 +18,9 @@ export class Input {
     this.mouseY = 0;
     this.clickedThisFrame = false;
     this.pad = new GamepadInput();
+    this.lastMouseX = 0;
+    this.lastMouseY = 0;
+    this.mouseMovedThisFrame = false;
     window.addEventListener('keydown', (e) => {
       if (!this.keys.has(e.code)) this.pressedThisFrame.add(e.code);
       this.keys.add(e.code);
@@ -35,6 +41,11 @@ export class Input {
       this.keys.clear();
     });
     window.addEventListener('mousemove', (e) => {
+      if (e.clientX !== this.lastMouseX || e.clientY !== this.lastMouseY) {
+        this.mouseMovedThisFrame = true;
+        this.lastMouseX = e.clientX;
+        this.lastMouseY = e.clientY;
+      }
       this.mouseX = e.clientX;
       this.mouseY = e.clientY;
     });
@@ -136,5 +147,6 @@ export class Input {
   endFrame(): void {
     this.pressedThisFrame.clear();
     this.clickedThisFrame = false;
+    this.mouseMovedThisFrame = false;
   }
 }

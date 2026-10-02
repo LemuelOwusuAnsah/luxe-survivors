@@ -3,18 +3,21 @@ import type { Scene } from '../engine/scene';
 import type { GameContext } from '../engine/context';
 import { HEROES } from '../data/heroes';
 import { GameScene } from './game';
+import { Hints } from '../ui/hints';
 
 export class SelectScene implements Scene {
   private ctx: GameContext;
   private index: number;
   private time: number;
   private confirmed: boolean;
+  private hints: Hints;
 
   constructor(ctx: GameContext) {
     this.ctx = ctx;
     this.index = 0;
     this.time = 0;
     this.confirmed = false;
+    this.hints = new Hints();
   }
 
   enter(): void {
@@ -41,9 +44,11 @@ export class SelectScene implements Scene {
     const input = this.ctx.input;
     if (input.wasPressed('ArrowLeft') || input.wasPressed('KeyA')) {
       this.index = (this.index - 1 + HEROES.length) % HEROES.length;
+      this.ctx.audio.select();
     }
     if (input.wasPressed('ArrowRight') || input.wasPressed('KeyD')) {
       this.index = (this.index + 1) % HEROES.length;
+      this.ctx.audio.select();
     }
     if (input.wasPressed('Enter') || input.wasPressed('Space')) {
       this.confirm();
@@ -58,6 +63,7 @@ export class SelectScene implements Scene {
             this.confirm();
           } else {
             this.index = i;
+            this.ctx.audio.select();
           }
           return;
         }
@@ -145,11 +151,15 @@ export class SelectScene implements Scene {
       ctx.fillText('HP ' + hero.maxHp, card.x + card.w / 2, card.y + 305);
     }
 
-    if (Math.floor(this.time * 2) % 2 === 0) {
-      ctx.fillStyle = '#f8fafc';
-      ctx.font = '12px PressStart2P, monospace';
-      ctx.fillText('ARROWS TO SELECT  -  ENTER TO CONFIRM', w / 2, h - 30);
-    }
+    this.hints.draw(
+      ctx,
+      [
+        { keys: 'ARROWS', action: 'SELECT' },
+        { keys: 'ENTER', action: 'CONFIRM' },
+        { keys: 'PAD A', action: 'CONFIRM' },
+      ],
+      h - 26
+    );
   }
 
   private wrap(

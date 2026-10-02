@@ -124,6 +124,10 @@ export class Audio {
     this.tone(990, 0.09, 'triangle', 0.1, 1320, 0.04);
   }
 
+  select(): void {
+    this.tone(720, 0.05, 'square', 0.12, 900);
+  }
+
   coin(): void {
     this.tone(1180, 0.04, 'square', 0.1, 1180);
     this.tone(1560, 0.1, 'square', 0.08, 1560, 0.04);

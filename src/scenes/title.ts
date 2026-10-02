@@ -2,6 +2,7 @@ import { CONFIG } from '../config';
 import type { Scene } from '../engine/scene';
 import type { GameContext } from '../engine/context';
 import { SelectScene } from './select';
+import { Hints } from '../ui/hints';
 
 interface Star {
   x: number;
@@ -16,12 +17,14 @@ export class TitleScene implements Scene {
   private time: number;
   private started: boolean;
   private stars: Star[];
+  private hints: Hints;
 
   constructor(ctx: GameContext) {
     this.ctx = ctx;
     this.time = 0;
     this.started = false;
     this.stars = [];
+    this.hints = new Hints();
     this.buildStars();
   }
 
@@ -235,8 +238,14 @@ export class TitleScene implements Scene {
       ctx.fillText('PRESS ANY KEY TO START', w / 2, h - 55);
     }
 
-    ctx.fillStyle = 'rgba(248,250,252,0.4)';
-    ctx.font = '10px PressStart2P, monospace';
-    ctx.fillText('WASD OR ARROWS TO MOVE', w / 2, h - 22);
+    this.hints.draw(
+      ctx,
+      [
+        { keys: 'WASD', action: 'MOVE' },
+        { keys: 'ENTER', action: 'CONFIRM' },
+        { keys: 'PAD A', action: 'CONFIRM' },
+      ],
+      h - 22
+    );
   }
 }
