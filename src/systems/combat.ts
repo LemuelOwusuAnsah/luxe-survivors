@@ -1,16 +1,19 @@
 import { CONFIG } from '../config';
 import { Enemy } from '../entities/enemy';
 import { Projectile } from '../entities/projectile';
+import { XpOrb } from '../entities/pickup';
 import type { Player } from '../entities/player';
 import type { Particles } from '../engine/particles';
 import type { UpgradeSystem } from './upgrades';
 import type { Audio } from '../engine/audio';
+import type { SpriteSheet } from '../engine/sprites';
 
 export class Combat {
   fireTimer: number;
   kills: number;
   enemies: Enemy[];
   projectiles: Projectile[];
+  orbs: XpOrb[];
   private upgrades: UpgradeSystem;
   private audio: Audio;
 
@@ -19,6 +22,7 @@ export class Combat {
     this.kills = 0;
     this.enemies = [];
     this.projectiles = [];
+    this.orbs = [];
     this.upgrades = upgrades;
     this.audio = audio;
   }
@@ -69,6 +73,7 @@ export class Combat {
           if (!e.alive) {
             this.kills += 1;
             particles.burst(e.x, e.y, 12, CONFIG.colors.enemy);
+            this.orbs.push(new XpOrb(e.x, e.y, e.xpValue));
             if (this.upgrades.stats.healOnKill > 0) {
               player.hp = Math.min(player.maxHp, player.hp + this.upgrades.stats.healOnKill);
             }
@@ -96,6 +101,14 @@ export class Combat {
     }
   }
 
+  updateOrbs(dt: number, player: Player, pickupRadius: number, audio: Audio): void {
+    for (let i = this.orbs.length - 1; i >= 0; i--) {
+      const o = this.orbs[i];
+      o.update(dt, player, pickupRadius, audio);
+      if (!o.alive) this.orbs.splice(i, 1);
+    }
+  }
+
   private nearestEnemy(player: Player): Enemy | null {
     let best: Enemy | null = null;
     let bestDist = CONFIG.projectile.range * CONFIG.projectile.range;
@@ -112,8 +125,15 @@ export class Combat {
     return best;
   }
 
-  draw(ctx: CanvasRenderingContext2D): void {
-    for (const e of this.enemies) e.draw(ctx);
-    for (const p of this.projectiles) p.draw(ctx);
+  draw(ctx: CanvasRenderingContext2D, sprites: SpriteSheet): void {
+    for (const o of this.orbs) {
+      o.draw(ctx, sprites.get('xp_orb'));
+    }
+    for (const e of this.enemies) {
+      e.draw(ctx, sprites.get(e.spriteKey));
+    }
+    for (const p of this.projectiles) {
+      p.draw(ctx, null);
+    }
   }
 }

@@ -31,7 +31,7 @@ export const CONFIG = {
     maxAlive: 200,
   },
   projectile: {
-    radius: 4,
+    radius: 7,
     speed: 420,
     lifetime: 1.6,
     damage: 10,
@@ -50,6 +50,28 @@ export const CONFIG = {
     flySpeed: 520,
     levelBase: 5,
     levelGrowth: 1.35,
+  },
+  coin: {
+    radius: 5,
+    dropChance: 0.08,
+    value: 1,
+    pickupRadius: 70,
+    flySpeed: 480,
+    lifetime: 12,
+  },
+  shake: {
+    hurtMagnitude: 8,
+    hurtDuration: 0.28,
+    killMagnitude: 1.6,
+    killDuration: 0.09,
+    decay: 2.2,
+  },
+  flash: {
+    hurtAlpha: 0.45,
+    hurtDuration: 0.28,
+  },
+  particles: {
+    maxCount: 900,
   },
   pause: {
     overlayAlpha: 0.6,
@@ -73,6 +95,10 @@ export const CONFIG = {
     cardHover: '#374151',
     cardBorder: '#4b5563',
     accent: '#6ee7ff',
+    blood: '#b91c1c',
+    coin: '#facc15',
+    coinOutline: '#a16207',
+    flashHurt: '#7f1d1d',
   },
   debug: {
     showFps: true,

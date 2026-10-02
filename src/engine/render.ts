@@ -1,4 +1,5 @@
 import { CONFIG } from '../config';
+import type { Sprite } from './sprites';
 
 export interface Camera {
   x: number;
@@ -10,6 +11,7 @@ export class Renderer {
   ctx: CanvasRenderingContext2D;
   camera: Camera;
   dpr: number;
+  private ground: Sprite | null;
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
@@ -18,8 +20,13 @@ export class Renderer {
     this.ctx = ctx;
     this.camera = { x: 0, y: 0 };
     this.dpr = Math.min(window.devicePixelRatio || 1, 2);
+    this.ground = null;
     this.resize();
     window.addEventListener('resize', () => this.resize());
+  }
+
+  setGround(sprite: Sprite): void {
+    this.ground = sprite;
   }
 
   resize(): void {
@@ -27,9 +34,6 @@ export class Renderer {
     const h = CONFIG.canvas.height;
     this.canvas.width = w * this.dpr;
     this.canvas.height = h * this.dpr;
-    this.canvas.style.width = '100%';
-    this.canvas.style.height = '100%';
-    this.canvas.style.display = 'block';
     this.ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
     this.ctx.imageSmoothingEnabled = false;
   }
@@ -52,27 +56,21 @@ export class Renderer {
     this.ctx.restore();
   }
 
-  drawGrid(): void {
-    const { tileSize, gridWidth, gridHeight } = CONFIG.world;
+  drawGround(): void {
     const { width, height } = CONFIG.canvas;
-    const startX = Math.max(0, Math.floor((this.camera.x - width / 2) / tileSize));
-    const endX = Math.min(gridWidth, Math.ceil((this.camera.x + width / 2) / tileSize));
-    const startY = Math.max(0, Math.floor((this.camera.y - height / 2) / tileSize));
-    const endY = Math.min(gridHeight, Math.ceil((this.camera.y + height / 2) / tileSize));
-
-    this.ctx.strokeStyle = CONFIG.colors.grid;
-    this.ctx.lineWidth = 1;
-    this.ctx.beginPath();
-    for (let x = startX; x <= endX; x++) {
-      const px = x * tileSize;
-      this.ctx.moveTo(px, startY * tileSize);
-      this.ctx.lineTo(px, endY * tileSize);
+    const tile = CONFIG.world.tileSize;
+    if (!this.ground || !this.ground.loaded) {
+      this.ctx.fillStyle = CONFIG.colors.bg;
+      this.ctx.fillRect(0, 0, width, height);
+      return;
     }
-    for (let y = startY; y <= endY; y++) {
-      const py = y * tileSize;
-      this.ctx.moveTo(startX * tileSize, py);
-      this.ctx.lineTo(endX * tileSize, py);
+    const img = this.ground.image;
+    const offsetX = -((this.camera.x % tile) + tile) % tile;
+    const offsetY = -((this.camera.y % tile) + tile) % tile;
+    for (let y = offsetY; y < height; y += tile) {
+      for (let x = offsetX; x < width; x += tile) {
+        this.ctx.drawImage(img, Math.floor(x), Math.floor(y), tile, tile);
+      }
     }
-    this.ctx.stroke();
   }
 }

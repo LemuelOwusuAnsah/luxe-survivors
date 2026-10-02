@@ -1,6 +1,7 @@
 import { CONFIG } from '../config';
 import type { Player } from './player';
 import type { Audio } from '../engine/audio';
+import type { Sprite } from '../engine/sprites';
 
 export class XpOrb {
   x: number;
@@ -39,7 +40,11 @@ export class XpOrb {
     }
   }
 
-  draw(ctx: CanvasRenderingContext2D): void {
+  draw(ctx: CanvasRenderingContext2D, sprite: Sprite | null): void {
+    if (sprite && sprite.loaded) {
+      sprite.draw(ctx, this.x, this.y, this.radius * 4, false);
+      return;
+    }
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
     ctx.fillStyle = CONFIG.colors.xp;

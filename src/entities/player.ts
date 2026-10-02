@@ -1,4 +1,5 @@
 import { CONFIG } from '../config';
+import type { Sprite } from '../engine/sprites';
 
 export class Player {
   x: number;
@@ -13,6 +14,7 @@ export class Player {
   xp: number;
   xpToNext: number;
   pendingLevelUps: number;
+  bobPhase: number;
 
   constructor(x: number, y: number) {
     this.x = x;
@@ -27,13 +29,18 @@ export class Player {
     this.xp = 0;
     this.xpToNext = CONFIG.xp.levelBase;
     this.pendingLevelUps = 0;
+    this.bobPhase = 0;
   }
 
   update(dt: number, move: { x: number; y: number }): void {
+    const moving = move.x !== 0 || move.y !== 0;
     this.x += move.x * this.speed * dt;
     this.y += move.y * this.speed * dt;
-    if (move.x !== 0 || move.y !== 0) {
+    if (moving) {
       this.facing = Math.atan2(move.y, move.x);
+      this.bobPhase += dt * 12;
+    } else {
+      this.bobPhase += dt * 3;
     }
     if (this.invulnTimer > 0) this.invulnTimer -= dt;
   }
@@ -43,19 +50,33 @@ export class Player {
     while (this.xp >= this.xpToNext) {
       this.xp -= this.xpToNext;
       this.level += 1;
-      this.xpToNext = Math.floor(CONFIG.xp.levelBase * Math.pow(CONFIG.xp.levelGrowth, this.level - 1));
+      this.xpToNext = Math.floor(
+        CONFIG.xp.levelBase * Math.pow(CONFIG.xp.levelGrowth, this.level - 1)
+      );
       this.pendingLevelUps += 1;
     }
   }
 
-  draw(ctx: CanvasRenderingContext2D): void {
+  draw(ctx: CanvasRenderingContext2D, sprite: Sprite | null): void {
     if (this.invulnTimer > 0 && Math.floor(this.invulnTimer * 20) % 2 === 0) return;
-    ctx.beginPath();
-    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-    ctx.fillStyle = CONFIG.colors.player;
-    ctx.fill();
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = CONFIG.colors.playerOutline;
-    ctx.stroke();
+    const size = this.radius * 3;
+    const bobY = Math.sin(this.bobPhase) * 1.5;
+    const squash = 1 + Math.sin(this.bobPhase * 2) * 0.04;
+
+    if (sprite && sprite.loaded) {
+      ctx.save();
+      ctx.translate(this.x, this.y + bobY);
+      ctx.scale(1 / squash, squash);
+      sprite.draw(ctx, 0, 0, size, false);
+      ctx.restore();
+    } else {
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+      ctx.fillStyle = CONFIG.colors.player;
+      ctx.fill();
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = CONFIG.colors.playerOutline;
+      ctx.stroke();
+    }
   }
 }

@@ -4,8 +4,8 @@ import { Input } from './engine/input';
 import { GameLoop } from './engine/loop';
 import { Particles } from './engine/particles';
 import { Audio } from './engine/audio';
+import { SpriteSheet } from './engine/sprites';
 import { Player } from './entities/player';
-import { XpOrb } from './entities/pickup';
 import { Combat } from './systems/combat';
 import { Spawner } from './systems/spawner';
 import { UpgradeSystem } from './systems/upgrades';
@@ -13,6 +13,19 @@ import { Hud } from './ui/hud';
 import { LevelUpUi } from './ui/levelup';
 import type { Upgrade } from './data/upgrades';
 import './style.css';
+
+import heroMage from './assets/sprites/hero_mage.png';
+import heroWarrior from './assets/sprites/hero_warrior.png';
+import heroRogue from './assets/sprites/hero_rogue.png';
+import enemySlime from './assets/sprites/enemy_slime.png';
+import enemyRat from './assets/sprites/enemy_rat.png';
+import enemyMinotaur from './assets/sprites/enemy_minotaur.png';
+import enemySpider from './assets/sprites/enemy_spider.png';
+import enemySkeleton from './assets/sprites/enemy_skeleton.png';
+import bossCyclops from './assets/sprites/boss_cyclops.png';
+import xpOrb from './assets/sprites/xp_orb.png';
+import coinSprite from './assets/sprites/coin.png';
+import groundSprite from './assets/sprites/ground.png';
 
 type State = 'playing' | 'levelup' | 'paused' | 'dead';
 
@@ -26,12 +39,27 @@ function boot(): void {
   const hud = new Hud();
   const levelUi = new LevelUpUi();
   const audio = new Audio();
+  const sprites = new SpriteSheet();
+
+  sprites.load('hero_mage', heroMage);
+  sprites.load('hero_warrior', heroWarrior);
+  sprites.load('hero_rogue', heroRogue);
+  sprites.load('enemy_slime', enemySlime);
+  sprites.load('enemy_rat', enemyRat);
+  sprites.load('enemy_minotaur', enemyMinotaur);
+  sprites.load('enemy_spider', enemySpider);
+  sprites.load('enemy_skeleton', enemySkeleton);
+  sprites.load('boss_cyclops', bossCyclops);
+  sprites.load('xp_orb', xpOrb);
+  sprites.load('coin', coinSprite);
+  sprites.load('ground', groundSprite);
+  const groundReady = sprites.get('ground');
+  if (groundReady) renderer.setGround(groundReady);
 
   let player: Player;
   let combat: Combat;
   let spawner: Spawner;
   let upgrades: UpgradeSystem;
-  let orbs: XpOrb[];
   let state: State;
   let elapsed: number;
   let offers: Upgrade[];
@@ -45,7 +73,6 @@ function boot(): void {
     upgrades = new UpgradeSystem();
     combat = new Combat(upgrades, audio);
     spawner = new Spawner();
-    orbs = [];
     state = 'playing';
     elapsed = 0;
     offers = [];
@@ -101,19 +128,7 @@ function boot(): void {
       player.update(dt, move);
       spawner.update(dt, player, combat.enemies);
       combat.update(dt, player, particles);
-
-      for (let i = orbs.length - 1; i >= 0; i--) {
-        const o = orbs[i];
-        o.update(dt, player, upgrades.stats.pickupRadius, audio);
-        if (!o.alive) orbs.splice(i, 1);
-      }
-
-      for (let i = combat.enemies.length - 1; i >= 0; i--) {
-        const e = combat.enemies[i];
-        if (!e.alive) {
-          orbs.push(new XpOrb(e.x, e.y, e.xpValue));
-        }
-      }
+      combat.updateOrbs(dt, player, upgrades.stats.pickupRadius, audio);
 
       if (player.pendingLevelUps > 0) {
         player.pendingLevelUps -= 1;
@@ -164,11 +179,10 @@ function boot(): void {
 
   const render = (): void => {
     renderer.clear();
+    renderer.drawGround();
     renderer.beginWorld();
-    renderer.drawGrid();
-    for (const o of orbs) o.draw(renderer.ctx);
-    combat.draw(renderer.ctx);
-    player.draw(renderer.ctx);
+    combat.draw(renderer.ctx, sprites);
+    player.draw(renderer.ctx, sprites.get('hero_mage'));
     particles.draw(renderer.ctx);
     renderer.endWorld();
 

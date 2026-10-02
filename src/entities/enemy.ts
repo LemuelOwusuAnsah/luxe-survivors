@@ -1,4 +1,5 @@
 import { CONFIG } from '../config';
+import type { Sprite } from '../engine/sprites';
 import type { Player } from './player';
 
 export class Enemy {
@@ -13,8 +14,17 @@ export class Enemy {
   flashTimer: number;
   touchCooldown: number;
   xpValue: number;
+  spriteKey: string;
+  bobPhase: number;
 
-  constructor(x: number, y: number, hp: number, speed: number, damage: number) {
+  constructor(
+    x: number,
+    y: number,
+    hp: number,
+    speed: number,
+    damage: number,
+    spriteKey: string
+  ) {
     this.x = x;
     this.y = y;
     this.radius = CONFIG.enemy.baseRadius;
@@ -26,6 +36,8 @@ export class Enemy {
     this.flashTimer = 0;
     this.touchCooldown = 0;
     this.xpValue = CONFIG.xp.baseValue;
+    this.spriteKey = spriteKey;
+    this.bobPhase = Math.random() * Math.PI * 2;
   }
 
   update(dt: number, player: Player): void {
@@ -35,6 +47,7 @@ export class Enemy {
     const len = Math.hypot(dx, dy) || 1;
     this.x += (dx / len) * this.speed * dt;
     this.y += (dy / len) * this.speed * dt;
+    this.bobPhase += dt * 8;
     if (this.flashTimer > 0) this.flashTimer -= dt;
     if (this.touchCooldown > 0) this.touchCooldown -= dt;
   }
@@ -45,14 +58,26 @@ export class Enemy {
     if (this.hp <= 0) this.alive = false;
   }
 
-  draw(ctx: CanvasRenderingContext2D): void {
+  draw(ctx: CanvasRenderingContext2D, sprite: Sprite | null): void {
     const flashing = this.flashTimer > 0;
-    ctx.beginPath();
-    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-    ctx.fillStyle = flashing ? '#ffffff' : CONFIG.colors.enemy;
-    ctx.fill();
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = flashing ? '#ffffff' : CONFIG.colors.enemyOutline;
-    ctx.stroke();
+    const size = this.radius * 3;
+    const bobY = Math.sin(this.bobPhase) * 1.2;
+    const squash = 1 + Math.sin(this.bobPhase * 2) * 0.05;
+
+    if (sprite && sprite.loaded) {
+      ctx.save();
+      ctx.translate(this.x, this.y + bobY);
+      ctx.scale(1 / squash, squash);
+      sprite.draw(ctx, 0, 0, size, flashing);
+      ctx.restore();
+    } else {
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+      ctx.fillStyle = flashing ? '#ffffff' : CONFIG.colors.enemy;
+      ctx.fill();
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = flashing ? '#ffffff' : CONFIG.colors.enemyOutline;
+      ctx.stroke();
+    }
   }
 }
