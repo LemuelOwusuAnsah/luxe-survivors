@@ -16,6 +16,8 @@ export class Enemy {
   xpValue: number;
   spriteKey: string;
   bobPhase: number;
+  targetOffsetX: number;
+  targetOffsetY: number;
   isBoss: boolean;
   chargeCooldown: number;
   chargeTimer: number;
@@ -43,6 +45,8 @@ export class Enemy {
     this.xpValue = CONFIG.xp.baseValue;
     this.spriteKey = spriteKey;
     this.bobPhase = Math.random() * Math.PI * 2;
+    this.targetOffsetX = (Math.random() * 2 - 1) * 40;
+    this.targetOffsetY = (Math.random() * 2 - 1) * 40;
     this.isBoss = false;
     this.chargeCooldown = 3 + Math.random() * 2;
     this.chargeTimer = 0;
@@ -53,8 +57,8 @@ export class Enemy {
   update(dt: number, player: Player): void {
     if (!this.alive) return;
 
-    const dx = player.x - this.x;
-    const dy = player.y - this.y;
+    const dx = player.x + this.targetOffsetX - this.x;
+    const dy = player.y + this.targetOffsetY - this.y;
     const len = Math.hypot(dx, dy) || 1;
 
     if (this.isBoss) {

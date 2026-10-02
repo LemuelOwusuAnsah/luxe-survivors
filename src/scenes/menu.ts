@@ -5,6 +5,7 @@ import { SelectScene } from './select';
 import { TitleScene } from './title';
 import { LeaderboardScene } from './leaderboard';
 import { SettingsScene } from './settings';
+import { LoadScene } from './load';
 import { Hints } from '../ui/hints';
 
 interface MenuItem {
@@ -21,18 +22,26 @@ export class MenuScene implements Scene {
 
   constructor(ctx: GameContext) {
     this.ctx = ctx;
-    this.items = [
-      { id: 'new', label: 'NEW GAME' },
-      { id: 'scores', label: 'LEADERBOARD' },
-      { id: 'settings', label: 'SETTINGS' },
-      { id: 'quit', label: 'QUIT' },
-    ];
+    this.items = [];
+    this.rebuildItems();
     this.index = 0;
     this.time = 0;
     this.hints = new Hints();
   }
 
+  private rebuildItems(): void {
+    const items: MenuItem[] = [{ id: 'new', label: 'NEW GAME' }];
+    if (this.ctx.savegame.exists()) {
+      items.push({ id: 'load', label: 'LOAD GAME' });
+    }
+    items.push({ id: 'scores', label: 'LEADERBOARD' });
+    items.push({ id: 'settings', label: 'SETTINGS' });
+    items.push({ id: 'quit', label: 'QUIT' });
+    this.items = items;
+  }
+
   enter(): void {
+    this.rebuildItems();
     this.index = 0;
     this.time = 0;
   }
@@ -47,6 +56,8 @@ export class MenuScene implements Scene {
       this.ctx.scenes.switchTo(new SelectScene(this.ctx));
     } else if (item.id === 'scores') {
       this.ctx.scenes.switchTo(new LeaderboardScene(this.ctx, this));
+    } else if (item.id === 'load') {
+      this.ctx.scenes.switchTo(new LoadScene(this.ctx, this));
     } else if (item.id === 'settings') {
       this.ctx.scenes.switchTo(new SettingsScene(this.ctx, this));
     } else if (item.id === 'quit') {

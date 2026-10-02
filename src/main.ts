@@ -7,6 +7,7 @@ import { Audio } from './engine/audio';
 import { SpriteSheet } from './engine/sprites';
 import { SceneManager } from './engine/scene';
 import { Leaderboard } from './systems/leaderboard';
+import { SaveGame } from './systems/savegame';
 import type { GameContext } from './engine/context';
 import { TitleScene } from './scenes/title';
 import { MobileBlockScene } from './scenes/mobileblock';
@@ -42,6 +43,7 @@ function boot(): void {
   const sprites = new SpriteSheet();
   const scenes = new SceneManager();
   const leaderboard = new Leaderboard();
+  const savegame = new SaveGame();
 
   sprites.load('hero_mage', heroMage);
   sprites.load('hero_warrior', heroWarrior);
@@ -72,6 +74,7 @@ function boot(): void {
     particles,
     scenes,
     leaderboard,
+    savegame,
   };
 
   let audioUnlocked = false;

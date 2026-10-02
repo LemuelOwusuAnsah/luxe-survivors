@@ -9,8 +9,8 @@ export class Hud {
     coins: number,
     elapsed: number,
     level: number,
-    xp: number,
-    xpToNext: number
+    killsThisLevel: number,
+    killsTarget: number
   ): void {
     const pad = 14;
     const barW = 240;
@@ -38,7 +38,7 @@ export class Hud {
 
     const xpY = pad + barH + 8;
     const xpH = 16;
-    const xpRatio = Math.max(0, Math.min(1, xp / xpToNext));
+    const xpRatio = Math.max(0, Math.min(1, killsThisLevel / killsTarget));
     ctx.fillStyle = 'rgba(0,0,0,0.55)';
     ctx.fillRect(pad, xpY, barW, xpH);
     ctx.fillStyle = CONFIG.colors.xpBar;
@@ -48,8 +48,11 @@ export class Hud {
 
     ctx.fillStyle = '#f8fafc';
     ctx.font = '10px PressStart2P, monospace';
-    ctx.textAlign = 'center';
-    ctx.fillText('LV ' + level, pad + barW / 2, xpY + xpH / 2 + 1);
+    ctx.fillText(
+      'LV ' + level + '   ' + killsThisLevel + '/' + killsTarget,
+      pad + barW / 2,
+      xpY + xpH / 2 + 1
+    );
 
     const mins = Math.floor(elapsed / 60);
     const secs = Math.floor(elapsed % 60);

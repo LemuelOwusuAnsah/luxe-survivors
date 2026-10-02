@@ -5,6 +5,7 @@ import type { SpriteSheet } from './sprites';
 import type { Particles } from './particles';
 import type { SceneManager } from './scene';
 import type { Leaderboard } from '../systems/leaderboard';
+import type { SaveGame } from '../systems/savegame';
 
 export interface GameContext {
   renderer: Renderer;
@@ -14,4 +15,5 @@ export interface GameContext {
   particles: Particles;
   scenes: SceneManager;
   leaderboard: Leaderboard;
+  savegame: SaveGame;
 }

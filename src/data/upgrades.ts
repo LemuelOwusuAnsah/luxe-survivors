@@ -1,5 +1,6 @@
 export interface UpgradeEffect {
   damageBonus?: number;
+  pierceBonus?: number;
   fireRateMultiplier?: number;
   projectileCountBonus?: number;
   speedBonus?: number;
@@ -19,12 +20,12 @@ export interface Upgrade {
 
 export const UPGRADES: Upgrade[] = [
   {
-    id: 'damage',
-    title: 'Sharper Bolts',
+    id: 'pierce',
+    title: 'Pierce',
     iconKey: 'icon_damage',
-    description: '+5 projectile damage',
-    effect: { damageBonus: 5 },
-    maxStacks: 10,
+    description: 'Bullets pass through enemies',
+    effect: { pierceBonus: 1 },
+    maxStacks: 3,
   },
   {
     id: 'firerate',

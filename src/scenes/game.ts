@@ -6,6 +6,7 @@ import { UpgradeSystem } from '../systems/upgrades';
 import { Hud } from '../ui/hud';
 import { LevelUpUi } from '../ui/levelup';
 import { HEROES } from '../data/heroes';
+import type { SavedRun } from '../systems/savegame';
 import { WEAPONS } from '../data/weapons';
 import type { HeroDefinition } from '../data/heroes';
 import type { Upgrade } from '../data/upgrades';
@@ -16,7 +17,7 @@ import { HelpScene } from './help';
 import { NameEntryScene } from './nameentry';
 import { LeaderboardScene } from './leaderboard';
 
-type State = 'playing' | 'levelup' | 'paused' | 'dead';
+type State = 'playing' | 'levelup' | 'paused' | 'dead' | 'levelclear' | 'failed';
 
 export class GameScene implements Scene {
   private ctx: GameContext;
@@ -40,8 +41,12 @@ export class GameScene implements Scene {
   private fpsDisplay: number;
   private scoreSubmitted: boolean;
   private bossAlerted!: boolean;
+  private savedRun: SavedRun | null;
+  private autosaveTimer: number;
+  private hearts: number;
+  private levelTimeLeft: number;
 
-  constructor(ctx: GameContext, heroId: string) {
+  constructor(ctx: GameContext, heroId: string, savedRun: SavedRun | null = null) {
     this.ctx = ctx;
     this.hud = new Hud();
     this.levelUi = new LevelUpUi();
@@ -50,6 +55,10 @@ export class GameScene implements Scene {
     this.fpsFrames = 0;
     this.fpsDisplay = 0;
     this.scoreSubmitted = false;
+    this.savedRun = savedRun;
+    this.autosaveTimer = 0;
+    this.hearts = CONFIG.run.startingHearts;
+    this.levelTimeLeft = 0;
     const found = HEROES.find((h) => h.id === heroId);
     this.hero = found ?? HEROES[0];
   }
@@ -72,6 +81,11 @@ export class GameScene implements Scene {
     this.upgrades.setWeapon(WEAPONS[hero.weaponId]);
     this.combat = new Combat(this.upgrades, this.ctx.audio, this.ctx.renderer);
     this.spawner = new Spawner();
+    this.combat.setSpawner(this.spawner);
+    this.spawner.onLevelAdvance = () => {
+      this.openLevelClear();
+    };
+    this.levelTimeLeft = CONFIG.run.level1Seconds + (this.spawner.level - 1) * CONFIG.run.secondsPerLevel;
     this.state = 'playing';
     this.elapsed = 0;
     this.offers = [];
@@ -83,6 +97,91 @@ export class GameScene implements Scene {
     this.bossAlerted = false;
     this.ctx.renderer.camera.x = this.player.x;
     this.ctx.renderer.camera.y = this.player.y;
+
+    if (this.savedRun) {
+      const r = this.savedRun;
+      this.player.level = r.level;
+      this.player.xp = r.xp;
+      this.player.xpToNext = r.xpToNext;
+      this.player.maxHp = r.maxHp;
+      this.player.hp = r.hp;
+      this.player.speed = r.speed;
+      this.elapsed = r.elapsed;
+      this.combat.kills = r.kills;
+      this.combat.coinsCollected = r.coins;
+      this.upgrades.stats.damage = r.damage;
+      this.upgrades.stats.fireIntervalMultiplier = r.fireIntervalMultiplier;
+      this.upgrades.stats.projectileCount = r.projectileCount;
+      this.upgrades.stats.pickupRadius = r.pickupRadius;
+      this.upgrades.stats.healOnKill = r.healOnKill;
+      for (const [id, count] of r.upgradeStacks) {
+        this.upgrades.stacks.set(id, count);
+      }
+      this.savedRun = null;
+    }
+  }
+
+  private writeSave(): void {
+    if (this.state !== 'playing' && this.state !== 'paused') return;
+    const stacks: Array<[string, number]> = [];
+    for (const [k, v] of this.upgrades.stacks.entries()) {
+      stacks.push([k, v]);
+    }
+    this.ctx.savegame.write({
+      name: this.ctx.leaderboard.getName(),
+      hero: this.hero.id,
+      level: this.player.level,
+      xp: this.player.xp,
+      xpToNext: this.player.xpToNext,
+      hp: this.player.hp,
+      maxHp: this.player.maxHp,
+      speed: this.player.speed,
+      elapsed: this.elapsed,
+      kills: this.combat.kills,
+      coins: this.combat.coinsCollected,
+      upgradeStacks: stacks,
+      fireIntervalMultiplier: this.upgrades.stats.fireIntervalMultiplier,
+      damage: this.upgrades.stats.damage,
+      projectileCount: this.upgrades.stats.projectileCount,
+      pickupRadius: this.upgrades.stats.pickupRadius,
+      healOnKill: this.upgrades.stats.healOnKill,
+      timestamp: Date.now(),
+    });
+  }
+
+  private retryLevel(): void {
+    this.combat.enemies.length = 0;
+    this.combat.projectiles.length = 0;
+    this.combat.orbs.length = 0;
+    this.combat.coins.length = 0;
+    this.combat.crates.length = 0;
+    this.spawner.killsThisLevel = 0;
+    this.spawner.spawnedThisLevel = 0;
+    this.spawner.spawnTimer = 0;
+    this.levelTimeLeft = CONFIG.run.level1Seconds + (this.spawner.level - 1) * CONFIG.run.secondsPerLevel;
+    this.state = 'playing';
+  }
+
+  private openLevelClear(): void {
+    this.offers = this.upgrades.offer(3);
+    if (this.offers.length === 0) {
+      this.offers = [];
+      this.state = 'playing';
+      return;
+    }
+    this.levelUi.layout(this.offers);
+    this.levelTimeLeft = CONFIG.run.level1Seconds + (this.spawner.level - 1) * CONFIG.run.secondsPerLevel;
+    this.state = 'levelclear';
+    this.selectedIndex = 0;
+    this.hover = this.offers[0];
+    this.ctx.audio.levelUp();
+  }
+
+  private confirmLevelClear(): void {
+    const chosen = this.offers[this.selectedIndex];
+    if (chosen) this.upgrades.apply(chosen, this.player);
+    this.offers = [];
+    this.state = 'playing';
   }
 
   private openLevelUp(): void {
@@ -164,9 +263,31 @@ export class GameScene implements Scene {
       const move = input.getMoveVector();
       this.player.update(dt, move);
       this.spawner.update(dt, this.player, this.combat.enemies);
-      this.combat.update(dt, this.player, particles);
+      const firing = input.isDown('KeyX');
+      this.combat.update(dt, this.player, particles, firing);
       this.combat.updateOrbs(dt, this.player, this.upgrades.stats.pickupRadius, audio);
       this.combat.updateCoins(dt, this.player, audio);
+      this.combat.updateCrates(dt, this.player, audio);
+
+      this.levelTimeLeft -= dt;
+      if (this.levelTimeLeft <= 0) {
+        this.hearts -= 1;
+        audio.hurt();
+        renderer.shake(12, 0.6);
+        if (this.hearts <= 0) {
+          audio.death();
+          this.ctx.savegame.clear();
+          this.state = 'dead';
+        } else {
+          this.state = 'failed';
+        }
+      }
+
+      this.autosaveTimer += dt;
+      if (this.autosaveTimer >= 5) {
+        this.autosaveTimer = 0;
+        this.writeSave();
+      }
 
       const bossAlive = this.combat.enemies.some((e) => e.isBoss && e.alive);
       if (bossAlive && !this.bossAlerted) {
@@ -182,14 +303,51 @@ export class GameScene implements Scene {
       }
       this.lastHp = this.player.hp;
 
-      if (this.player.pendingLevelUps > 0) {
-        this.player.pendingLevelUps -= 1;
-        this.openLevelUp();
-      } else if (this.player.hp <= 0) {
+      this.player.pendingLevelUps = 0;
+      if (this.player.hp <= 0) {
         audio.death();
+        this.ctx.savegame.clear();
         this.state = 'dead';
       } else if (input.wasPressed('Escape') || input.wasPressed('KeyP')) {
         this.state = 'paused';
+      }
+    } else if (this.state === 'levelclear') {
+      if (input.wasPressed('ArrowLeft') || input.wasPressed('KeyA')) {
+        this.selectedIndex = (this.selectedIndex - 1 + this.offers.length) % this.offers.length;
+        this.hover = this.offers[this.selectedIndex];
+      }
+      if (input.wasPressed('ArrowRight') || input.wasPressed('KeyD')) {
+        this.selectedIndex = (this.selectedIndex + 1) % this.offers.length;
+        this.hover = this.offers[this.selectedIndex];
+      }
+      if (
+        input.wasPressed('Enter') ||
+        input.wasPressed('Space') ||
+        input.wasPressed('KeyX')
+      ) {
+        this.confirmLevelClear();
+      } else if (input.mouseMovedThisFrame) {
+        const c = this.toCanvasCoords();
+        const moused = this.levelUi.hitTest(c.x, c.y);
+        if (moused) {
+          const idx = this.offers.findIndex((u) => u.id === moused.id);
+          if (idx >= 0) {
+            this.selectedIndex = idx;
+            this.hover = this.offers[this.selectedIndex];
+          }
+        }
+      }
+      if (input.wasClicked()) {
+        const c2 = this.toCanvasCoords();
+        const moused2 = this.levelUi.hitTest(c2.x, c2.y);
+        if (moused2) {
+          const idx2 = this.offers.findIndex((u) => u.id === moused2.id);
+          if (idx2 >= 0) {
+            this.selectedIndex = idx2;
+            this.hover = this.offers[this.selectedIndex];
+          }
+          this.confirmLevelClear();
+        }
       }
     } else if (this.state === 'levelup') {
       if (input.wasPressed('ArrowLeft') || input.wasPressed('KeyA')) {
@@ -230,6 +388,17 @@ export class GameScene implements Scene {
           this.confirmUpgrade();
         }
       }
+    } else if (this.state === 'failed') {
+      if (
+        input.wasPressed('Enter') ||
+        input.wasPressed('Space') ||
+        input.wasPressed('KeyX')
+      ) {
+        this.retryLevel();
+      } else if (input.wasPressed('KeyY') || input.wasPressed('Escape')) {
+        this.ctx.savegame.clear();
+        this.ctx.scenes.switchTo(new TitleScene(this.ctx));
+      }
     } else if (this.state === 'paused') {
       if (input.wasPressed('KeyH')) {
         this.ctx.scenes.switchTo(new HelpScene(this.ctx, this));
@@ -241,6 +410,7 @@ export class GameScene implements Scene {
       ) {
         this.state = 'playing';
       } else if (input.wasPressed('KeyY')) {
+        this.writeSave();
         this.ctx.scenes.switchTo(new TitleScene(this.ctx));
       }
     } else if (this.state === 'dead') {
@@ -285,10 +455,38 @@ export class GameScene implements Scene {
       this.combat.kills,
       this.combat.coinsCollected,
       this.elapsed,
-      this.player.level,
-      this.player.xp,
-      this.player.xpToNext
+      this.spawner.level,
+      this.spawner.killsThisLevel,
+      this.spawner.levelTarget
     );
+
+    const sp = this.spawner;
+    const remaining = sp.levelTarget - sp.killsThisLevel;
+    const waveInfo = 'LEVEL ' + sp.level + '   ENEMIES LEFT ' + remaining;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = 'rgba(0,0,0,0.5)';
+    ctx.font = '10px PressStart2P, monospace';
+    const waveW = ctx.measureText(waveInfo).width + 24;
+    ctx.fillRect(CONFIG.canvas.width / 2 - waveW / 2, 14, waveW, 26);
+    ctx.fillStyle = '#fce029';
+    ctx.fillText(waveInfo, CONFIG.canvas.width / 2, 28);
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'alphabetic';
+
+    if (sp.splashTimer > 0) {
+      const a = Math.min(1, sp.splashTimer);
+      ctx.save();
+      ctx.globalAlpha = a;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#6ee7ff';
+      ctx.font = '40px PressStart2P, monospace';
+      ctx.fillText(sp.splashText, CONFIG.canvas.width / 2, CONFIG.canvas.height / 2 - 40);
+      ctx.restore();
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'alphabetic';
+    }
 
     const boss = this.combat.enemies.find((e) => e.isBoss && e.alive);
     if (boss) {
@@ -301,7 +499,53 @@ export class GameScene implements Scene {
       ctx.fillRect(0, 0, CONFIG.canvas.width, CONFIG.canvas.height);
     }
 
-    if (this.state === 'levelup') {
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const secs = Math.max(0, Math.ceil(this.levelTimeLeft));
+    const timeStr = secs + 's';
+    ctx.fillStyle = secs < 15 ? '#ef4444' : '#f8fafc';
+    ctx.font = '12px PressStart2P, monospace';
+    ctx.fillText(timeStr, CONFIG.canvas.width / 2, 58);
+
+    const heartStartX = CONFIG.canvas.width / 2 - (this.hearts * 14) / 2;
+    for (let i = 0; i < this.hearts; i++) {
+      ctx.fillStyle = '#ef4444';
+      ctx.beginPath();
+      ctx.arc(heartStartX + i * 14, 78, 4, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'alphabetic';
+
+    if (this.state === 'failed') {
+      ctx.fillStyle = 'rgba(0,0,0,0.82)';
+      ctx.fillRect(0, 0, CONFIG.canvas.width, CONFIG.canvas.height);
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#ef4444';
+      ctx.font = '28px PressStart2P, monospace';
+      ctx.fillText('MISSION FAILED', CONFIG.canvas.width / 2, CONFIG.canvas.height / 2 - 50);
+      ctx.fillStyle = '#f8fafc';
+      ctx.font = '11px PressStart2P, monospace';
+      ctx.fillText('HEARTS REMAINING  ' + this.hearts, CONFIG.canvas.width / 2, CONFIG.canvas.height / 2 + 10);
+      ctx.fillStyle = '#6ee7ff';
+      ctx.fillText('A / ENTER   RETRY', CONFIG.canvas.width / 2, CONFIG.canvas.height / 2 + 60);
+      ctx.fillStyle = '#fca5a5';
+      ctx.fillText('Y / ESC   MAIN MENU', CONFIG.canvas.width / 2, CONFIG.canvas.height / 2 + 90);
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'alphabetic';
+    }
+
+    if (this.state === 'levelclear') {
+      ctx.fillStyle = 'rgba(0,0,0,0.82)';
+      ctx.fillRect(0, 0, CONFIG.canvas.width, CONFIG.canvas.height);
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#fce029';
+      ctx.font = '20px PressStart2P, monospace';
+      ctx.fillText('LEVEL ' + (this.spawner.level - 1) + ' COMPLETE', CONFIG.canvas.width / 2, 70);
+      ctx.textAlign = 'left';
+      this.levelUi.draw(ctx, this.hover, this.selectedIndex, this.ctx.sprites);
+    } else if (this.state === 'levelup') {
       this.levelUi.draw(ctx, this.hover, this.selectedIndex, this.ctx.sprites);
     }
 
