@@ -27,6 +27,7 @@ export class GameScene implements Scene {
   private elapsed!: number;
   private offers!: Upgrade[];
   private hover!: Upgrade | null;
+  private selectedIndex!: number;
   private muted: boolean;
   private hurtFlashTimer!: number;
   private lastHp!: number;
@@ -68,6 +69,7 @@ export class GameScene implements Scene {
     this.elapsed = 0;
     this.offers = [];
     this.hover = null;
+    this.selectedIndex = 0;
     this.hurtFlashTimer = 0;
     this.lastHp = this.player.hp;
     this.ctx.renderer.camera.x = this.player.x;
@@ -82,8 +84,22 @@ export class GameScene implements Scene {
     }
     this.levelUi.layout(this.offers);
     this.state = 'levelup';
-    this.hover = null;
+    this.selectedIndex = 0;
+    this.hover = this.offers[0];
     this.ctx.audio.levelUp();
+  }
+
+  private confirmUpgrade(): void {
+    const chosen = this.offers[this.selectedIndex];
+    if (!chosen) return;
+    this.upgrades.apply(chosen, this.player);
+    this.offers = [];
+    if (this.player.pendingLevelUps > 0) {
+      this.player.pendingLevelUps -= 1;
+      this.openLevelUp();
+    } else {
+      this.state = 'playing';
+    }
   }
 
   private toCanvasCoords(): { x: number; y: number } {
@@ -131,16 +147,33 @@ export class GameScene implements Scene {
         this.state = 'paused';
       }
     } else if (this.state === 'levelup') {
-      const c = this.toCanvasCoords();
-      this.hover = this.levelUi.hitTest(c.x, c.y);
-      if (input.wasClicked() && this.hover) {
-        this.upgrades.apply(this.hover, this.player);
-        this.offers = [];
-        if (this.player.pendingLevelUps > 0) {
-          this.player.pendingLevelUps -= 1;
-          this.openLevelUp();
-        } else {
-          this.state = 'playing';
+      if (input.wasPressed('ArrowLeft') || input.wasPressed('KeyA')) {
+        this.selectedIndex = (this.selectedIndex - 1 + this.offers.length) % this.offers.length;
+        this.hover = this.offers[this.selectedIndex];
+      }
+      if (input.wasPressed('ArrowRight') || input.wasPressed('KeyD')) {
+        this.selectedIndex = (this.selectedIndex + 1) % this.offers.length;
+        this.hover = this.offers[this.selectedIndex];
+      }
+      if (
+        input.wasPressed('Enter') ||
+        input.wasPressed('Space') ||
+        input.wasPressed('KeyX') ||
+        input.wasPressed('KeyO')
+      ) {
+        this.confirmUpgrade();
+      } else {
+        const c = this.toCanvasCoords();
+        const moused = this.levelUi.hitTest(c.x, c.y);
+        if (moused) {
+          const idx = this.offers.findIndex((u) => u.id === moused.id);
+          if (idx >= 0 && idx !== this.selectedIndex) {
+            this.selectedIndex = idx;
+            this.hover = this.offers[this.selectedIndex];
+          }
+        }
+        if (input.wasClicked() && moused) {
+          this.confirmUpgrade();
         }
       }
     } else if (this.state === 'paused') {
@@ -148,7 +181,9 @@ export class GameScene implements Scene {
         this.state = 'playing';
       }
     } else if (this.state === 'dead') {
-      if (input.wasPressed('KeyR')) this.reset();
+      if (input.wasPressed('KeyR') || input.wasPressed('Enter') || input.wasPressed('Space')) {
+        this.reset();
+      }
     }
 
     if (this.hurtFlashTimer > 0) this.hurtFlashTimer -= dt;
@@ -197,7 +232,7 @@ export class GameScene implements Scene {
     }
 
     if (this.state === 'levelup') {
-      this.levelUi.draw(ctx, this.hover);
+      this.levelUi.draw(ctx, this.hover, this.selectedIndex);
     }
 
     if (this.state === 'paused') {

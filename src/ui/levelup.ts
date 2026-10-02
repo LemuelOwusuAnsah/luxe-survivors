@@ -44,31 +44,51 @@ export class LevelUpUi {
     return null;
   }
 
-  draw(ctx: CanvasRenderingContext2D, hover: Upgrade | null): void {
+  draw(ctx: CanvasRenderingContext2D, hover: Upgrade | null, selectedIndex: number): void {
     ctx.fillStyle = 'rgba(0,0,0,0.75)';
     ctx.fillRect(0, 0, CONFIG.canvas.width, CONFIG.canvas.height);
 
     ctx.fillStyle = CONFIG.colors.text;
     ctx.textAlign = 'center';
-    ctx.font = '28px monospace';
-    ctx.fillText('LEVEL UP', CONFIG.canvas.width / 2, 110);
+    ctx.font = '28px PressStart2P, monospace';
+    ctx.fillText('LEVEL UP', CONFIG.canvas.width / 2, 90);
+    ctx.font = '10px PressStart2P, monospace';
+    ctx.fillStyle = 'rgba(248,250,252,0.6)';
+    ctx.fillText('CHOOSE AN UPGRADE', CONFIG.canvas.width / 2, 118);
 
-    for (const c of this.cards) {
+    for (let i = 0; i < this.cards.length; i++) {
+      const c = this.cards[i];
+      const isSelected = i === selectedIndex;
       const isHover = hover && hover.id === c.upgrade.id;
-      ctx.fillStyle = isHover ? CONFIG.colors.cardHover : CONFIG.colors.card;
+      const active = isSelected || isHover;
+
+      ctx.fillStyle = active ? CONFIG.colors.cardHover : CONFIG.colors.card;
       ctx.fillRect(c.x, c.y, c.w, c.h);
-      ctx.lineWidth = 2;
-      ctx.strokeStyle = CONFIG.colors.cardBorder;
+
+      ctx.lineWidth = isSelected ? 4 : active ? 3 : 2;
+      ctx.strokeStyle = isSelected ? '#fce029' : active ? CONFIG.colors.accent : CONFIG.colors.cardBorder;
       ctx.strokeRect(c.x + 0.5, c.y + 0.5, c.w - 1, c.h - 1);
 
-      ctx.fillStyle = CONFIG.colors.accent;
-      ctx.font = '18px monospace';
-      ctx.fillText(c.upgrade.title, c.x + c.w / 2, c.y + 50);
+      if (isSelected) {
+        ctx.save();
+        ctx.shadowColor = '#fce029';
+        ctx.shadowBlur = 16;
+        ctx.strokeRect(c.x + 0.5, c.y + 0.5, c.w - 1, c.h - 1);
+        ctx.restore();
+      }
+
+      ctx.fillStyle = active ? '#fce029' : CONFIG.colors.accent;
+      ctx.font = '14px PressStart2P, monospace';
+      ctx.fillText(c.upgrade.title, c.x + c.w / 2, c.y + 55);
 
       ctx.fillStyle = CONFIG.colors.text;
-      ctx.font = '14px monospace';
-      this.wrapText(ctx, c.upgrade.description, c.x + c.w / 2, c.y + 90, c.w - 24, 18);
+      ctx.font = '10px PressStart2P, monospace';
+      this.wrapText(ctx, c.upgrade.description, c.x + c.w / 2, c.y + 100, c.w - 30, 20);
     }
+
+    ctx.fillStyle = 'rgba(248,250,252,0.55)';
+    ctx.font = '9px PressStart2P, monospace';
+    ctx.fillText('ARROWS TO PICK   ENTER TO CONFIRM', CONFIG.canvas.width / 2, CONFIG.canvas.height - 40);
 
     ctx.textAlign = 'left';
   }

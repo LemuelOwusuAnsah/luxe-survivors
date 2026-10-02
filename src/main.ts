@@ -58,7 +58,10 @@ function boot(): void {
     scenes,
   };
 
+  let audioUnlocked = false;
   const unlockAudio = (): void => {
+    if (audioUnlocked) return;
+    audioUnlocked = true;
     audio.unlock();
     window.removeEventListener('keydown', unlockAudio);
     window.removeEventListener('mousedown', unlockAudio);
@@ -69,6 +72,8 @@ function boot(): void {
   scenes.switchTo(new TitleScene(context));
 
   const update = (dt: number): void => {
+    input.poll();
+    if (!audioUnlocked && input.padActive()) unlockAudio();
     scenes.update(dt);
     particles.update(dt);
     input.endFrame();
