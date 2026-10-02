@@ -17,6 +17,10 @@ html, body {
   height: 100%;
   overflow: hidden;
   background: #05070c;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 #app {
@@ -36,4 +40,14 @@ canvas#game {
   max-height: 100vh;
   width: auto;
   height: auto;
+}
+
+@media (pointer: coarse) {
+  canvas#game {
+    aspect-ratio: auto;
+    width: 100vw;
+    height: 100vh;
+    max-width: 100vw;
+    max-height: 100vh;
+  }
 }

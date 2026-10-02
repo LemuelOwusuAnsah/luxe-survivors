@@ -1,7 +1,7 @@
 export const CONFIG = {
   canvas: {
-    width: 960,
-    height: 540,
+    width: 960 as number,
+    height: 540 as number,
     targetFps: 60,
   },
   world: {
@@ -117,3 +117,8 @@ export const CONFIG = {
 } as const;
 
 export type Config = typeof CONFIG;
+
+export function setViewport(w: number, h: number): void {
+  (CONFIG.canvas as { width: number; height: number }).width = w;
+  (CONFIG.canvas as { width: number; height: number }).height = h;
+}

@@ -1,4 +1,4 @@
-import { CONFIG } from '../config';
+import { CONFIG, setViewport } from '../config';
 import type { Sprite } from './sprites';
 
 export interface Camera {
@@ -14,6 +14,8 @@ export class Renderer {
   shakeTimer: number;
   shakeMagnitude: number;
   private ground: Sprite | null;
+  private viewWidth: number;
+  private viewHeight: number;
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
@@ -25,6 +27,8 @@ export class Renderer {
     this.shakeTimer = 0;
     this.shakeMagnitude = 0;
     this.ground = null;
+    this.viewWidth = CONFIG.canvas.width;
+    this.viewHeight = CONFIG.canvas.height;
     this.resize();
     window.addEventListener('resize', () => this.resize());
   }
@@ -60,12 +64,32 @@ export class Renderer {
   }
 
   resize(): void {
-    const w = CONFIG.canvas.width;
-    const h = CONFIG.canvas.height;
+    const touch = window.matchMedia('(pointer: coarse)').matches;
+    let w: number;
+    let h: number;
+    if (touch) {
+      const rect = this.canvas.getBoundingClientRect();
+      w = Math.max(320, Math.floor(rect.width));
+      h = Math.max(240, Math.floor(rect.height));
+    } else {
+      w = CONFIG.canvas.width;
+      h = CONFIG.canvas.height;
+    }
     this.canvas.width = w * this.dpr;
     this.canvas.height = h * this.dpr;
     this.ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
     this.ctx.imageSmoothingEnabled = false;
+    this.viewWidth = w;
+    this.viewHeight = h;
+    setViewport(w, h);
+  }
+
+  getWidth(): number {
+    return this.viewWidth;
+  }
+
+  getHeight(): number {
+    return this.viewHeight;
   }
 
   clear(): void {
