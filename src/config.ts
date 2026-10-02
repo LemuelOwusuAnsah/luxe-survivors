@@ -51,6 +51,16 @@ export const CONFIG = {
     levelBase: 5,
     levelGrowth: 1.35,
   },
+  boss: {
+    intervalSeconds: 300,
+    baseHp: 1500,
+    hpGrowth: 1.6,
+    baseSpeed: 42,
+    baseDamage: 20,
+    radius: 34,
+    xpValue: 25,
+    coinDrops: 4,
+  },
   coin: {
     radius: 8,
     dropChance: 0.18,

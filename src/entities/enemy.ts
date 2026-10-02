@@ -16,6 +16,11 @@ export class Enemy {
   xpValue: number;
   spriteKey: string;
   bobPhase: number;
+  isBoss: boolean;
+  chargeCooldown: number;
+  chargeTimer: number;
+  chargeVx: number;
+  chargeVy: number;
 
   constructor(
     x: number,
@@ -38,16 +43,44 @@ export class Enemy {
     this.xpValue = CONFIG.xp.baseValue;
     this.spriteKey = spriteKey;
     this.bobPhase = Math.random() * Math.PI * 2;
+    this.isBoss = false;
+    this.chargeCooldown = 3 + Math.random() * 2;
+    this.chargeTimer = 0;
+    this.chargeVx = 0;
+    this.chargeVy = 0;
   }
 
   update(dt: number, player: Player): void {
     if (!this.alive) return;
+
     const dx = player.x - this.x;
     const dy = player.y - this.y;
     const len = Math.hypot(dx, dy) || 1;
-    this.x += (dx / len) * this.speed * dt;
-    this.y += (dy / len) * this.speed * dt;
-    this.bobPhase += dt * 8;
+
+    if (this.isBoss) {
+      if (this.chargeTimer > 0) {
+        this.x += this.chargeVx * dt;
+        this.y += this.chargeVy * dt;
+        this.chargeTimer -= dt;
+      } else {
+        this.chargeCooldown -= dt;
+        if (this.chargeCooldown <= 0) {
+          this.chargeVx = (dx / len) * this.speed * 4;
+          this.chargeVy = (dy / len) * this.speed * 4;
+          this.chargeTimer = 0.7;
+          this.chargeCooldown = 3.5 + Math.random() * 1.5;
+          this.flashTimer = 0.2;
+        } else {
+          this.x += (dx / len) * this.speed * dt;
+          this.y += (dy / len) * this.speed * dt;
+        }
+      }
+    } else {
+      this.x += (dx / len) * this.speed * dt;
+      this.y += (dy / len) * this.speed * dt;
+    }
+
+    this.bobPhase += dt * (this.isBoss ? 4 : 8);
     if (this.flashTimer > 0) this.flashTimer -= dt;
     if (this.touchCooldown > 0) this.touchCooldown -= dt;
   }
@@ -61,7 +94,7 @@ export class Enemy {
   draw(ctx: CanvasRenderingContext2D, sprite: Sprite | null): void {
     const flashing = this.flashTimer > 0;
     const size = this.radius * 3;
-    const bobY = Math.sin(this.bobPhase) * 1.2;
+    const bobY = Math.sin(this.bobPhase) * (this.isBoss ? 2 : 1.2);
     const squash = 1 + Math.sin(this.bobPhase * 2) * 0.05;
 
     if (sprite && sprite.loaded) {

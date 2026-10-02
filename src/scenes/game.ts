@@ -39,6 +39,7 @@ export class GameScene implements Scene {
   private fpsFrames: number;
   private fpsDisplay: number;
   private scoreSubmitted: boolean;
+  private bossAlerted!: boolean;
 
   constructor(ctx: GameContext, heroId: string) {
     this.ctx = ctx;
@@ -79,6 +80,7 @@ export class GameScene implements Scene {
     this.hurtFlashTimer = 0;
     this.lastHp = this.player.hp;
     this.scoreSubmitted = false;
+    this.bossAlerted = false;
     this.ctx.renderer.camera.x = this.player.x;
     this.ctx.renderer.camera.y = this.player.y;
   }
@@ -165,6 +167,15 @@ export class GameScene implements Scene {
       this.combat.update(dt, this.player, particles);
       this.combat.updateOrbs(dt, this.player, this.upgrades.stats.pickupRadius, audio);
       this.combat.updateCoins(dt, this.player, audio);
+
+      const bossAlive = this.combat.enemies.some((e) => e.isBoss && e.alive);
+      if (bossAlive && !this.bossAlerted) {
+        this.bossAlerted = true;
+        audio.bossEntrance();
+        renderer.shake(10, 0.5);
+      } else if (!bossAlive) {
+        this.bossAlerted = false;
+      }
 
       if (this.player.hp < this.lastHp) {
         this.hurtFlashTimer = CONFIG.flash.hurtDuration;
@@ -278,6 +289,11 @@ export class GameScene implements Scene {
       this.player.xp,
       this.player.xpToNext
     );
+
+    const boss = this.combat.enemies.find((e) => e.isBoss && e.alive);
+    if (boss) {
+      this.hud.drawBossBar(ctx, 'CYCLOPS', boss.hp, boss.maxHp);
+    }
 
     if (this.hurtFlashTimer > 0) {
       const alpha = (this.hurtFlashTimer / CONFIG.flash.hurtDuration) * CONFIG.flash.hurtAlpha;

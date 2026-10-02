@@ -91,7 +91,15 @@ export class Combat {
             this.kills += 1;
             particles.burst(e.x, e.y, 14, CONFIG.colors.blood);
             this.orbs.push(new XpOrb(e.x, e.y, e.xpValue));
-            if (Math.random() < CONFIG.coin.dropChance) {
+            if (e.isBoss) {
+              for (let c = 0; c < CONFIG.boss.coinDrops; c++) {
+                const angle = Math.random() * Math.PI * 2;
+                const dist = 12 + Math.random() * 24;
+                this.coins.push(
+                  new Coin(e.x + Math.cos(angle) * dist, e.y + Math.sin(angle) * dist, CONFIG.coin.value)
+                );
+              }
+            } else if (Math.random() < CONFIG.coin.dropChance) {
               this.coins.push(new Coin(e.x, e.y, CONFIG.coin.value));
             }
             this.renderer.shake(CONFIG.shake.killMagnitude, CONFIG.shake.killDuration);

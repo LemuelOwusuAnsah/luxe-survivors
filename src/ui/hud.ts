@@ -65,4 +65,39 @@ export class Hud {
     ctx.textAlign = 'left';
     ctx.textBaseline = 'alphabetic';
   }
+
+  drawBossBar(
+    ctx: CanvasRenderingContext2D,
+    bossName: string,
+    hp: number,
+    maxHp: number
+  ): void {
+    const w = CONFIG.canvas.width;
+    const barW = 480;
+    const barH = 20;
+    const x = (w - barW) / 2;
+    const y = 56;
+    const ratio = Math.max(0, Math.min(1, hp / maxHp));
+
+    ctx.textBaseline = 'middle';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#fca5a5';
+    ctx.font = '10px PressStart2P, monospace';
+    ctx.fillText(bossName, w / 2, y - 14);
+
+    ctx.fillStyle = 'rgba(0,0,0,0.7)';
+    ctx.fillRect(x, y, barW, barH);
+    const g = ctx.createLinearGradient(x, 0, x + barW, 0);
+    g.addColorStop(0, '#7f1d1d');
+    g.addColorStop(0.5, '#ef4444');
+    g.addColorStop(1, '#b91c1c');
+    ctx.fillStyle = g;
+    ctx.fillRect(x, y, barW * ratio, barH);
+    ctx.strokeStyle = '#f8fafc';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(x + 0.5, y + 0.5, barW - 1, barH - 1);
+
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'alphabetic';
+  }
 }
