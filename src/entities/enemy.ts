@@ -12,6 +12,7 @@ export class Enemy {
   alive: boolean;
   flashTimer: number;
   touchCooldown: number;
+  xpValue: number;
 
   constructor(x: number, y: number, hp: number, speed: number, damage: number) {
     this.x = x;
@@ -24,6 +25,7 @@ export class Enemy {
     this.alive = true;
     this.flashTimer = 0;
     this.touchCooldown = 0;
+    this.xpValue = CONFIG.xp.baseValue;
   }
 
   update(dt: number, player: Player): void {

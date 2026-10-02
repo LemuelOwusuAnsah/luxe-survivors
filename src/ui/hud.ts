@@ -6,7 +6,10 @@ export class Hud {
     hp: number,
     maxHp: number,
     kills: number,
-    elapsed: number
+    elapsed: number,
+    level: number,
+    xp: number,
+    xpToNext: number
   ): void {
     const pad = 12;
     const barW = 240;
@@ -27,6 +30,18 @@ export class Hud {
     ctx.font = '14px monospace';
     ctx.textAlign = 'left';
     ctx.fillText('HP ' + Math.max(0, Math.ceil(hp)) + '/' + maxHp, pad + 6, pad + 12);
+
+    const xpY = pad + barH + 6;
+    const xpRatio = Math.max(0, Math.min(1, xp / xpToNext));
+    ctx.fillStyle = CONFIG.colors.xpBarBg;
+    ctx.fillRect(pad, xpY, barW, 10);
+    ctx.fillStyle = CONFIG.colors.xpBar;
+    ctx.fillRect(pad, xpY, barW * xpRatio, 10);
+    ctx.strokeStyle = CONFIG.colors.text;
+    ctx.strokeRect(pad + 0.5, xpY + 0.5, barW - 1, 9);
+    ctx.fillStyle = CONFIG.colors.text;
+    ctx.font = '12px monospace';
+    ctx.fillText('LV ' + level, pad + 6, xpY + 9);
 
     const mins = Math.floor(elapsed / 60);
     const secs = Math.floor(elapsed % 60);

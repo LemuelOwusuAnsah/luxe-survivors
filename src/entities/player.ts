@@ -9,6 +9,10 @@ export class Player {
   maxHp: number;
   invulnTimer: number;
   facing: number;
+  level: number;
+  xp: number;
+  xpToNext: number;
+  pendingLevelUps: number;
 
   constructor(x: number, y: number) {
     this.x = x;
@@ -19,6 +23,10 @@ export class Player {
     this.maxHp = CONFIG.player.maxHp;
     this.invulnTimer = 0;
     this.facing = 0;
+    this.level = 1;
+    this.xp = 0;
+    this.xpToNext = CONFIG.xp.levelBase;
+    this.pendingLevelUps = 0;
   }
 
   update(dt: number, move: { x: number; y: number }): void {
@@ -28,6 +36,16 @@ export class Player {
       this.facing = Math.atan2(move.y, move.x);
     }
     if (this.invulnTimer > 0) this.invulnTimer -= dt;
+  }
+
+  gainXp(amount: number): void {
+    this.xp += amount;
+    while (this.xp >= this.xpToNext) {
+      this.xp -= this.xpToNext;
+      this.level += 1;
+      this.xpToNext = Math.floor(CONFIG.xp.levelBase * Math.pow(CONFIG.xp.levelGrowth, this.level - 1));
+      this.pendingLevelUps += 1;
+    }
   }
 
   draw(ctx: CanvasRenderingContext2D): void {

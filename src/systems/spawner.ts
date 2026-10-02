@@ -17,7 +17,8 @@ export class Spawner {
     if (this.timer > 0) return;
 
     const ramp = Math.min(1, this.elapsed / CONFIG.enemy.spawnRampSeconds);
-    const interval = CONFIG.enemy.spawnIntervalMs * (1 - ramp) + CONFIG.enemy.spawnIntervalMinMs * ramp;
+    const interval =
+      CONFIG.enemy.spawnIntervalMs * (1 - ramp) + CONFIG.enemy.spawnIntervalMinMs * ramp;
     this.timer = interval / 1000;
 
     const alive = enemies.filter((e) => e.alive).length;

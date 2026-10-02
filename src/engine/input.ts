@@ -1,10 +1,16 @@
 export class Input {
   private keys: Set<string>;
   private pressedThisFrame: Set<string>;
+  mouseX: number;
+  mouseY: number;
+  private clickedThisFrame: boolean;
 
   constructor() {
     this.keys = new Set();
     this.pressedThisFrame = new Set();
+    this.mouseX = 0;
+    this.mouseY = 0;
+    this.clickedThisFrame = false;
     window.addEventListener('keydown', (e) => {
       if (!this.keys.has(e.code)) this.pressedThisFrame.add(e.code);
       this.keys.add(e.code);
@@ -24,6 +30,13 @@ export class Input {
     window.addEventListener('blur', () => {
       this.keys.clear();
     });
+    window.addEventListener('mousemove', (e) => {
+      this.mouseX = e.clientX;
+      this.mouseY = e.clientY;
+    });
+    window.addEventListener('mousedown', () => {
+      this.clickedThisFrame = true;
+    });
   }
 
   isDown(code: string): boolean {
@@ -32,6 +45,10 @@ export class Input {
 
   wasPressed(code: string): boolean {
     return this.pressedThisFrame.has(code);
+  }
+
+  wasClicked(): boolean {
+    return this.clickedThisFrame;
   }
 
   getMoveVector(): { x: number; y: number } {
@@ -51,5 +68,6 @@ export class Input {
 
   endFrame(): void {
     this.pressedThisFrame.clear();
+    this.clickedThisFrame = false;
   }
 }
