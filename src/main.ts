@@ -22,6 +22,12 @@ import bossCyclops from './assets/sprites/boss_cyclops.png';
 import xpOrb from './assets/sprites/xp_orb.png';
 import coinSprite from './assets/sprites/coin.png';
 import groundSprite from './assets/sprites/ground.png';
+import iconDamage from './assets/icons/icon_damage.png';
+import iconFirerate from './assets/icons/icon_firerate.png';
+import iconMultishot from './assets/icons/icon_multishot.png';
+import iconSpeed from './assets/icons/icon_speed.png';
+import iconMaxhp from './assets/icons/icon_maxhp.png';
+import iconPickup from './assets/icons/icon_pickup.png';
 
 function boot(): void {
   const canvas = document.querySelector<HTMLCanvasElement>('#game');
@@ -46,6 +52,12 @@ function boot(): void {
   sprites.load('xp_orb', xpOrb);
   sprites.load('coin', coinSprite);
   sprites.load('ground', groundSprite);
+  sprites.load('icon_damage', iconDamage);
+  sprites.load('icon_firerate', iconFirerate);
+  sprites.load('icon_multishot', iconMultishot);
+  sprites.load('icon_speed', iconSpeed);
+  sprites.load('icon_maxhp', iconMaxhp);
+  sprites.load('icon_pickup', iconPickup);
   const groundReady = sprites.get('ground');
   if (groundReady) renderer.setGround(groundReady);
 

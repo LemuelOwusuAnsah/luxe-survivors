@@ -240,7 +240,7 @@ export class GameScene implements Scene {
     }
 
     if (this.state === 'levelup') {
-      this.levelUi.draw(ctx, this.hover, this.selectedIndex);
+      this.levelUi.draw(ctx, this.hover, this.selectedIndex, this.ctx.sprites);
     }
 
     if (this.state === 'paused') {

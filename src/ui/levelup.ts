@@ -1,5 +1,6 @@
 import { CONFIG } from '../config';
 import type { Upgrade } from '../data/upgrades';
+import type { SpriteSheet } from '../engine/sprites';
 
 export interface CardRect {
   x: number;
@@ -19,7 +20,7 @@ export class LevelUpUi {
   layout(upgrades: Upgrade[]): void {
     this.cards = [];
     const w = 240;
-    const h = 200;
+    const h = 240;
     const gap = 24;
     const totalW = upgrades.length * w + (upgrades.length - 1) * gap;
     const startX = (CONFIG.canvas.width - totalW) / 2;
@@ -44,17 +45,22 @@ export class LevelUpUi {
     return null;
   }
 
-  draw(ctx: CanvasRenderingContext2D, hover: Upgrade | null, selectedIndex: number): void {
-    ctx.fillStyle = 'rgba(0,0,0,0.75)';
+  draw(
+    ctx: CanvasRenderingContext2D,
+    hover: Upgrade | null,
+    selectedIndex: number,
+    sprites: SpriteSheet
+  ): void {
+    ctx.fillStyle = 'rgba(0,0,0,0.78)';
     ctx.fillRect(0, 0, CONFIG.canvas.width, CONFIG.canvas.height);
 
-    ctx.fillStyle = CONFIG.colors.text;
+    ctx.fillStyle = '#6ee7ff';
     ctx.textAlign = 'center';
-    ctx.font = '28px PressStart2P, monospace';
-    ctx.fillText('LEVEL UP', CONFIG.canvas.width / 2, 90);
-    ctx.font = '10px PressStart2P, monospace';
+    ctx.font = '24px PressStart2P, monospace';
+    ctx.fillText('LEVEL UP', CONFIG.canvas.width / 2, 80);
+    ctx.font = '9px PressStart2P, monospace';
     ctx.fillStyle = 'rgba(248,250,252,0.6)';
-    ctx.fillText('CHOOSE AN UPGRADE', CONFIG.canvas.width / 2, 118);
+    ctx.fillText('CHOOSE AN UPGRADE', CONFIG.canvas.width / 2, 106);
 
     for (let i = 0; i < this.cards.length; i++) {
       const c = this.cards[i];
@@ -72,18 +78,23 @@ export class LevelUpUi {
       if (isSelected) {
         ctx.save();
         ctx.shadowColor = '#fce029';
-        ctx.shadowBlur = 16;
+        ctx.shadowBlur = 18;
         ctx.strokeRect(c.x + 0.5, c.y + 0.5, c.w - 1, c.h - 1);
         ctx.restore();
       }
 
+      const icon = sprites.get(c.upgrade.iconKey);
+      if (icon && icon.loaded) {
+        icon.draw(ctx, c.x + c.w / 2, c.y + 72, 56, false);
+      }
+
       ctx.fillStyle = active ? '#fce029' : CONFIG.colors.accent;
-      ctx.font = '14px PressStart2P, monospace';
-      ctx.fillText(c.upgrade.title, c.x + c.w / 2, c.y + 55);
+      ctx.font = '11px PressStart2P, monospace';
+      ctx.fillText(c.upgrade.title, c.x + c.w / 2, c.y + 140);
 
       ctx.fillStyle = CONFIG.colors.text;
-      ctx.font = '10px PressStart2P, monospace';
-      this.wrapText(ctx, c.upgrade.description, c.x + c.w / 2, c.y + 100, c.w - 30, 20);
+      ctx.font = '9px PressStart2P, monospace';
+      this.wrapText(ctx, c.upgrade.description, c.x + c.w / 2, c.y + 175, c.w - 30, 18);
     }
 
     ctx.fillStyle = 'rgba(248,250,252,0.55)';
