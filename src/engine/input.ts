@@ -103,7 +103,9 @@ export class Input {
       case 'KeyM':
         return PAD.SELECT;
       case 'KeyX':
-        return PAD.X;
+        return PAD.A;
+      case 'KeyY':
+        return PAD.Y;
       case 'KeyO':
         return PAD.B;
       default:

@@ -11,6 +11,7 @@ import type { HeroDefinition } from '../data/heroes';
 import type { Upgrade } from '../data/upgrades';
 import type { Scene } from '../engine/scene';
 import type { GameContext } from '../engine/context';
+import { TitleScene } from './title';
 
 type State = 'playing' | 'levelup' | 'paused' | 'dead';
 
@@ -177,8 +178,15 @@ export class GameScene implements Scene {
         }
       }
     } else if (this.state === 'paused') {
-      if (input.wasPressed('Escape') || input.wasPressed('KeyP')) {
+      if (
+        input.wasPressed('Escape') ||
+        input.wasPressed('KeyP') ||
+        input.wasPressed('KeyX') ||
+        input.wasPressed('Enter')
+      ) {
         this.state = 'playing';
+      } else if (input.wasPressed('KeyY')) {
+        this.ctx.scenes.switchTo(new TitleScene(this.ctx));
       }
     } else if (this.state === 'dead') {
       if (input.wasPressed('KeyR') || input.wasPressed('Enter') || input.wasPressed('Space')) {
@@ -236,14 +244,27 @@ export class GameScene implements Scene {
     }
 
     if (this.state === 'paused') {
+      const w = CONFIG.canvas.width;
+      const h = CONFIG.canvas.height;
       ctx.fillStyle = 'rgba(0,0,0,' + CONFIG.pause.overlayAlpha + ')';
-      ctx.fillRect(0, 0, CONFIG.canvas.width, CONFIG.canvas.height);
-      ctx.fillStyle = CONFIG.colors.text;
+      ctx.fillRect(0, 0, w, h);
+
       ctx.textAlign = 'center';
-      ctx.font = '36px monospace';
-      ctx.fillText('PAUSED', CONFIG.canvas.width / 2, CONFIG.canvas.height / 2 - 10);
-      ctx.font = '16px monospace';
-      ctx.fillText('ESC or P to resume', CONFIG.canvas.width / 2, CONFIG.canvas.height / 2 + 25);
+      ctx.fillStyle = '#6ee7ff';
+      ctx.font = '32px PressStart2P, monospace';
+      ctx.fillText('PAUSED', w / 2, h / 2 - 70);
+
+      ctx.fillStyle = '#f8fafc';
+      ctx.font = '12px PressStart2P, monospace';
+      ctx.fillText('X / A / ENTER  -  RESUME', w / 2, h / 2 - 5);
+
+      ctx.fillStyle = '#fca5a5';
+      ctx.font = '12px PressStart2P, monospace';
+      ctx.fillText('Y  -  MAIN MENU', w / 2, h / 2 + 35);
+
+      ctx.fillStyle = 'rgba(248,250,252,0.5)';
+      ctx.font = '9px PressStart2P, monospace';
+      ctx.fillText('ESC OR P ALSO RESUMES', w / 2, h / 2 + 95);
       ctx.textAlign = 'left';
     }
 
