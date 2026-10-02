@@ -117,6 +117,8 @@ export class Input {
         return PAD.A;
       case 'KeyY':
         return PAD.Y;
+      case 'KeyZ':
+        return PAD.X;
       case 'KeyO':
         return PAD.B;
       default:

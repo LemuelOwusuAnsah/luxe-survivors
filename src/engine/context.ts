@@ -4,6 +4,7 @@ import type { Audio } from './audio';
 import type { SpriteSheet } from './sprites';
 import type { Particles } from './particles';
 import type { SceneManager } from './scene';
+import type { Leaderboard } from '../systems/leaderboard';
 
 export interface GameContext {
   renderer: Renderer;
@@ -12,4 +13,5 @@ export interface GameContext {
   sprites: SpriteSheet;
   particles: Particles;
   scenes: SceneManager;
+  leaderboard: Leaderboard;
 }
