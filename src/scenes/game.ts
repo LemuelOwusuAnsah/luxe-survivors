@@ -13,6 +13,7 @@ import type { Scene } from '../engine/scene';
 import type { GameContext } from '../engine/context';
 import { TitleScene } from './title';
 import { Hints } from '../ui/hints';
+import { HelpScene } from './help';
 
 type State = 'playing' | 'levelup' | 'paused' | 'dead';
 
@@ -191,7 +192,9 @@ export class GameScene implements Scene {
         }
       }
     } else if (this.state === 'paused') {
-      if (
+      if (input.wasPressed('KeyH')) {
+        this.ctx.scenes.switchTo(new HelpScene(this.ctx, this));
+      } else if (
         input.wasPressed('Escape') ||
         input.wasPressed('KeyP') ||
         input.wasPressed('KeyX') ||

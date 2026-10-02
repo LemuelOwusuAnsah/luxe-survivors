@@ -3,6 +3,7 @@ import type { Scene } from '../engine/scene';
 import type { GameContext } from '../engine/context';
 import { SelectScene } from './select';
 import { Hints } from '../ui/hints';
+import { HelpScene } from './help';
 
 interface Star {
   x: number;
@@ -55,6 +56,12 @@ export class TitleScene implements Scene {
     if (this.started) return;
 
     const input = this.ctx.input;
+
+    if (input.wasPressed('KeyH')) {
+      this.ctx.scenes.switchTo(new HelpScene(this.ctx, this));
+      return;
+    }
+
     const codes = [
       'Space',
       'Enter',
