@@ -1,4 +1,5 @@
 import { GamepadInput, PAD } from './gamepad';
+import { TouchInput } from './touch';
 
 export class Input {
   private keys: Set<string>;
@@ -7,6 +8,7 @@ export class Input {
   mouseY: number;
   private clickedThisFrame: boolean;
   private pad: GamepadInput;
+  private touch: TouchInput;
   private lastMouseX: number;
   private lastMouseY: number;
   mouseMovedThisFrame: boolean;
@@ -18,6 +20,7 @@ export class Input {
     this.mouseY = 0;
     this.clickedThisFrame = false;
     this.pad = new GamepadInput();
+    this.touch = new TouchInput();
     this.lastMouseX = 0;
     this.lastMouseY = 0;
     this.mouseMovedThisFrame = false;
@@ -58,6 +61,22 @@ export class Input {
     this.pad.poll();
   }
 
+  attachTouch(el: HTMLElement): void {
+    this.touch.attach(el);
+  }
+
+  getTouch(): TouchInput {
+    return this.touch;
+  }
+
+  getTapX(): number {
+    return this.touch.tapX;
+  }
+
+  getTapY(): number {
+    return this.touch.tapY;
+  }
+
   padActive(): boolean {
     if (!this.pad.connected) return false;
     const mv = this.pad.getMoveVector();
@@ -86,6 +105,7 @@ export class Input {
 
   wasClicked(): boolean {
     if (this.clickedThisFrame) return true;
+    if (this.touch.wasTapped()) return true;
     if (this.pad.wasPressed(PAD.A)) return true;
     if (this.pad.wasPressed(PAD.START)) return true;
     return false;
@@ -138,6 +158,10 @@ export class Input {
     x += padMove.x;
     y += padMove.y;
 
+    const touchMove = this.touch.getMoveVector();
+    x += touchMove.x;
+    y += touchMove.y;
+
     const len = Math.hypot(x, y);
     if (len > 1) {
       x /= len;
@@ -150,5 +174,6 @@ export class Input {
     this.pressedThisFrame.clear();
     this.clickedThisFrame = false;
     this.mouseMovedThisFrame = false;
+    this.touch.endFrame();
   }
 }

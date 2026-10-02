@@ -346,6 +346,23 @@ export class GameScene implements Scene {
       ctx.textAlign = 'left';
     }
 
+    const stick = this.ctx.input.getTouch().getStickState();
+    if (stick.active) {
+      ctx.save();
+      ctx.globalAlpha = 0.35;
+      ctx.beginPath();
+      ctx.arc(stick.ox, stick.oy, stick.r, 0, Math.PI * 2);
+      ctx.strokeStyle = '#6ee7ff';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.globalAlpha = 0.5;
+      ctx.beginPath();
+      ctx.arc(stick.cx, stick.cy, 22, 0, Math.PI * 2);
+      ctx.fillStyle = '#6ee7ff';
+      ctx.fill();
+      ctx.restore();
+    }
+
     if (CONFIG.debug.showFps) {
       ctx.fillStyle = CONFIG.colors.text;
       ctx.font = '10px PressStart2P, monospace';

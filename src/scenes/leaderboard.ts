@@ -45,10 +45,30 @@ export class LeaderboardScene implements Scene {
     const rect = canvas.getBoundingClientRect();
     const sx = CONFIG.canvas.width / rect.width;
     const sy = CONFIG.canvas.height / rect.height;
+    const touch = this.ctx.input.getTouch();
+    const usingTouch = touch.wasTapped();
+    const clientX = usingTouch ? touch.tapX + rect.left : this.ctx.input.mouseX;
+    const clientY = usingTouch ? touch.tapY + rect.top : this.ctx.input.mouseY;
     return {
-      x: (this.ctx.input.mouseX - rect.left) * sx,
-      y: (this.ctx.input.mouseY - rect.top) * sy,
+      x: (clientX - rect.left) * sx,
+      y: (clientY - rect.top) * sy,
     };
+  }
+
+  private handleBadgeTap(id: string): void {
+    if (id === 'back') {
+      this.exiting = true;
+      this.ctx.scenes.switchTo(this.returnTo);
+      return;
+    }
+    if (id === 'delete') {
+      const entries = this.ctx.leaderboard.top();
+      if (entries.length === 0) return;
+      this.confirming = true;
+      this.confirmYes = false;
+      this.pendingDelete = this.index;
+      this.ctx.audio.select();
+    }
   }
 
   private rowHitTest(mx: number, my: number, count: number): number {
@@ -108,6 +128,34 @@ export class LeaderboardScene implements Scene {
         this.pendingDelete = -1;
         this.ctx.audio.select();
       }
+
+      if (input.wasClicked()) {
+        const c = this.toCanvasCoords();
+        const w = CONFIG.canvas.width;
+        const h = CONFIG.canvas.height;
+        const btnW = 160;
+        const btnH = 56;
+        const gap = 40;
+        const yesX = w / 2 - btnW - gap / 2;
+        const noX = w / 2 + gap / 2;
+        const btnY = h / 2 + 20;
+        if (c.x >= yesX && c.x <= yesX + btnW && c.y >= btnY && c.y <= btnY + btnH) {
+          this.ctx.leaderboard.removeAt(this.pendingDelete);
+          this.ctx.audio.hurt();
+          const after = this.ctx.leaderboard.top();
+          if (this.index >= after.length) {
+            this.index = Math.max(0, after.length - 1);
+          }
+          this.confirming = false;
+          this.confirmYes = false;
+          this.pendingDelete = -1;
+        } else if (c.x >= noX && c.x <= noX + btnW && c.y >= btnY && c.y <= btnY + btnH) {
+          this.confirming = false;
+          this.confirmYes = false;
+          this.pendingDelete = -1;
+          this.ctx.audio.select();
+        }
+      }
       return;
     }
 
@@ -141,10 +189,22 @@ export class LeaderboardScene implements Scene {
       }
       if (input.wasClicked()) {
         const c = this.toCanvasCoords();
+        const badge = this.hints.hitTest(c.x, c.y);
+        if (badge) {
+          this.handleBadgeTap(badge);
+          return;
+        }
         const clicked = this.rowHitTest(c.x, c.y, entries.length);
         if (clicked >= 0) {
-          this.index = clicked;
-          this.ctx.audio.select();
+          if (clicked === this.index) {
+            this.confirming = true;
+            this.confirmYes = false;
+            this.pendingDelete = this.index;
+            this.ctx.audio.select();
+          } else {
+            this.index = clicked;
+            this.ctx.audio.select();
+          }
         }
       }
     }
@@ -289,13 +349,12 @@ export class LeaderboardScene implements Scene {
       const hints =
         entries.length > 0
           ? [
-              { keys: 'UP/DOWN', action: 'MOVE' },
-              { keys: 'X / PAD X', action: 'DELETE' },
-              { keys: 'ESC', action: 'BACK' },
+              { keys: 'UP/DOWN', action: 'MOVE', id: 'move' },
+              { keys: 'X / PAD X', action: 'DELETE', touchAction: 'TAP HERE', id: 'delete' },
+              { keys: 'ESC', action: 'BACK', touchAction: 'TAP HERE', id: 'back' },
             ]
           : [
-              { keys: 'ESC', action: 'BACK' },
-              { keys: 'PAD B', action: 'BACK' },
+              { keys: 'ESC / PAD B', action: 'BACK', touchAction: 'TAP HERE', id: 'back' },
             ];
       this.hints.draw(ctx, hints, h - 30);
     }

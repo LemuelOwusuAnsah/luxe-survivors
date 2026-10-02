@@ -83,6 +83,9 @@ function boot(): void {
   };
   window.addEventListener('keydown', unlockAudio);
   window.addEventListener('mousedown', unlockAudio);
+  window.addEventListener('touchstart', unlockAudio);
+
+  input.attachTouch(canvas);
 
   scenes.switchTo(new TitleScene(context));
 
