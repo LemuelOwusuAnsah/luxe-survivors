@@ -5,6 +5,9 @@ import { Spawner } from '../systems/spawner';
 import { UpgradeSystem } from '../systems/upgrades';
 import { Hud } from '../ui/hud';
 import { LevelUpUi } from '../ui/levelup';
+import { HEROES } from '../data/heroes';
+import { WEAPONS } from '../data/weapons';
+import type { HeroDefinition } from '../data/heroes';
 import type { Upgrade } from '../data/upgrades';
 import type { Scene } from '../engine/scene';
 import type { GameContext } from '../engine/context';
@@ -13,6 +16,7 @@ type State = 'playing' | 'levelup' | 'paused' | 'dead';
 
 export class GameScene implements Scene {
   private ctx: GameContext;
+  private hero: HeroDefinition;
   private player!: Player;
   private combat!: Combat;
   private spawner!: Spawner;
@@ -30,7 +34,7 @@ export class GameScene implements Scene {
   private fpsFrames: number;
   private fpsDisplay: number;
 
-  constructor(ctx: GameContext) {
+  constructor(ctx: GameContext, heroId: string) {
     this.ctx = ctx;
     this.hud = new Hud();
     this.levelUi = new LevelUpUi();
@@ -38,6 +42,8 @@ export class GameScene implements Scene {
     this.fpsAccum = 0;
     this.fpsFrames = 0;
     this.fpsDisplay = 0;
+    const found = HEROES.find((h) => h.id === heroId);
+    this.hero = found ?? HEROES[0];
   }
 
   enter(): void {
@@ -49,8 +55,13 @@ export class GameScene implements Scene {
   }
 
   private reset(): void {
+    const hero = this.hero;
     this.player = new Player(0, 0);
+    this.player.maxHp = hero.maxHp;
+    this.player.hp = hero.maxHp;
+    this.player.speed = hero.speed;
     this.upgrades = new UpgradeSystem();
+    this.upgrades.setWeapon(WEAPONS[hero.weaponId]);
     this.combat = new Combat(this.upgrades, this.ctx.audio, this.ctx.renderer);
     this.spawner = new Spawner();
     this.state = 'playing';
@@ -163,7 +174,7 @@ export class GameScene implements Scene {
     renderer.drawGround();
     renderer.beginWorld();
     this.combat.draw(ctx, this.ctx.sprites);
-    this.player.draw(ctx, this.ctx.sprites.get('hero_mage'));
+    this.player.draw(ctx, this.ctx.sprites.get(this.hero.spriteKey));
     this.ctx.particles.draw(ctx);
     renderer.endWorld();
 

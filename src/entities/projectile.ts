@@ -12,15 +12,23 @@ export class Projectile {
   life: number;
   alive: boolean;
 
-  constructor(x: number, y: number, angle: number, damage: number) {
+  constructor(
+    x: number,
+    y: number,
+    angle: number,
+    damage: number,
+    speed: number,
+    lifetime: number,
+    radius: number
+  ) {
     this.x = x;
     this.y = y;
-    this.vx = Math.cos(angle) * CONFIG.projectile.speed;
-    this.vy = Math.sin(angle) * CONFIG.projectile.speed;
+    this.vx = Math.cos(angle) * speed;
+    this.vy = Math.sin(angle) * speed;
     this.angle = angle;
-    this.radius = CONFIG.projectile.radius;
+    this.radius = radius;
     this.damage = damage;
-    this.life = CONFIG.projectile.lifetime;
+    this.life = lifetime;
     this.alive = true;
   }
 

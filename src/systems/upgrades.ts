@@ -1,12 +1,18 @@
 import { UPGRADES } from '../data/upgrades';
 import type { Upgrade } from '../data/upgrades';
 import type { Player } from '../entities/player';
+import type { WeaponDefinition } from '../data/weapons';
 import { CONFIG } from '../config';
 
 export interface WeaponStats {
   damage: number;
+  fireIntervalMs: number;
   fireIntervalMultiplier: number;
   projectileCount: number;
+  spread: number;
+  projectileSpeed: number;
+  projectileLifetime: number;
+  projectileRadius: number;
   pickupRadius: number;
   healOnKill: number;
 }
@@ -14,16 +20,56 @@ export interface WeaponStats {
 export class UpgradeSystem {
   stacks: Map<string, number>;
   stats: WeaponStats;
+  private base: WeaponDefinition;
 
   constructor() {
     this.stacks = new Map();
-    this.stats = {
-      damage: 0,
-      fireIntervalMultiplier: 1,
+    this.base = {
+      id: 'wand',
+      name: 'Magic Wand',
+      fireIntervalMs: CONFIG.projectile.fireIntervalMs,
+      damage: CONFIG.projectile.damage,
       projectileCount: 1,
+      spread: 0.18,
+      speed: CONFIG.projectile.speed,
+      lifetime: CONFIG.projectile.lifetime,
+      radius: CONFIG.projectile.radius,
+    };
+    this.stats = this.buildStats();
+  }
+
+  setWeapon(weapon: WeaponDefinition): void {
+    this.base = weapon;
+    this.rebuild();
+  }
+
+  private buildStats(): WeaponStats {
+    return {
+      damage: this.base.damage,
+      fireIntervalMs: this.base.fireIntervalMs,
+      fireIntervalMultiplier: 1,
+      projectileCount: this.base.projectileCount,
+      spread: this.base.spread,
+      projectileSpeed: this.base.speed,
+      projectileLifetime: this.base.lifetime,
+      projectileRadius: this.base.radius,
       pickupRadius: CONFIG.xp.pickupRadius,
       healOnKill: 0,
     };
+  }
+
+  private rebuild(): void {
+    const damageBonus = 0;
+    const fireMult = this.stats.fireIntervalMultiplier;
+    const countBonus = this.stats.projectileCount - this.base.projectileCount;
+    const pickup = this.stats.pickupRadius;
+    const heal = this.stats.healOnKill;
+    this.stats = this.buildStats();
+    this.stats.damage += damageBonus;
+    this.stats.fireIntervalMultiplier = fireMult;
+    this.stats.projectileCount += countBonus;
+    this.stats.pickupRadius = pickup;
+    this.stats.healOnKill = heal;
   }
 
   offer(count: number): Upgrade[] {

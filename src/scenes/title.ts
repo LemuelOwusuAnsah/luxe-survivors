@@ -1,7 +1,7 @@
 import { CONFIG } from '../config';
 import type { Scene } from '../engine/scene';
 import type { GameContext } from '../engine/context';
-import { GameScene } from './game';
+import { SelectScene } from './select';
 
 interface Star {
   x: number;
@@ -67,13 +67,13 @@ export class TitleScene implements Scene {
     for (const c of codes) {
       if (input.wasPressed(c)) {
         this.started = true;
-        this.ctx.scenes.switchTo(new GameScene(this.ctx));
+        this.ctx.scenes.switchTo(new SelectScene(this.ctx));
         return;
       }
     }
     if (input.wasClicked()) {
       this.started = true;
-      this.ctx.scenes.switchTo(new GameScene(this.ctx));
+      this.ctx.scenes.switchTo(new SelectScene(this.ctx));
     }
   }
 

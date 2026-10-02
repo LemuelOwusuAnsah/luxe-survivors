@@ -41,21 +41,30 @@ export class Combat {
     }
     for (const p of this.projectiles) p.update(dt);
 
-    const baseInterval = CONFIG.projectile.fireIntervalMs / 1000;
-    const interval = baseInterval * this.upgrades.stats.fireIntervalMultiplier;
+    const stats = this.upgrades.stats;
+    const interval = (stats.fireIntervalMs / 1000) * stats.fireIntervalMultiplier;
 
     this.fireTimer -= dt;
     if (this.fireTimer <= 0) {
       const target = this.nearestEnemy(player);
       if (target) {
         const baseAngle = Math.atan2(target.y - player.y, target.x - player.x);
-        const count = this.upgrades.stats.projectileCount;
-        const spread = 0.18;
+        const count = stats.projectileCount;
+        const spread = stats.spread;
         const start = baseAngle - (spread * (count - 1)) / 2;
         for (let i = 0; i < count; i++) {
-          const angle = start + spread * i;
-          const dmg = CONFIG.projectile.damage + this.upgrades.stats.damage;
-          this.projectiles.push(new Projectile(player.x, player.y, angle, dmg));
+          const angle = count === 1 ? baseAngle : start + spread * i;
+          this.projectiles.push(
+            new Projectile(
+              player.x,
+              player.y,
+              angle,
+              stats.damage,
+              stats.projectileSpeed,
+              stats.projectileLifetime,
+              stats.projectileRadius
+            )
+          );
         }
         this.fireTimer = interval;
       }
