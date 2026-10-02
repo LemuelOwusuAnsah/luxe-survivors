@@ -7,7 +7,7 @@ import { Audio } from './engine/audio';
 import { SpriteSheet } from './engine/sprites';
 import { SceneManager } from './engine/scene';
 import type { GameContext } from './engine/context';
-import { GameScene } from './scenes/game';
+import { TitleScene } from './scenes/title';
 import './style.css';
 
 import heroMage from './assets/sprites/hero_mage.png';
@@ -66,7 +66,7 @@ function boot(): void {
   window.addEventListener('keydown', unlockAudio);
   window.addEventListener('mousedown', unlockAudio);
 
-  scenes.switchTo(new GameScene(context));
+  scenes.switchTo(new TitleScene(context));
 
   const update = (dt: number): void => {
     scenes.update(dt);

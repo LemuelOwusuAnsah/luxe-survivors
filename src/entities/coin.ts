@@ -35,7 +35,7 @@ export class Coin {
     const cr = player.radius + this.radius + 4;
     if (dx * dx + dy * dy <= cr * cr) {
       onCollect(this.value);
-      audio.pickup();
+      audio.coin();
       this.alive = false;
     }
   }
