@@ -52,8 +52,8 @@ export const CONFIG = {
     levelGrowth: 1.35,
   },
   coin: {
-    radius: 5,
-    dropChance: 0.08,
+    radius: 8,
+    dropChance: 0.18,
     value: 1,
     pickupRadius: 70,
     flySpeed: 480,

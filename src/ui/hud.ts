@@ -6,6 +6,7 @@ export class Hud {
     hp: number,
     maxHp: number,
     kills: number,
+    coins: number,
     elapsed: number,
     level: number,
     xp: number,
@@ -49,7 +50,8 @@ export class Hud {
 
     ctx.textAlign = 'right';
     ctx.fillText('KILLS ' + kills, CONFIG.canvas.width - pad, pad + 12);
-    ctx.fillText(time, CONFIG.canvas.width - pad, pad + 30);
+    ctx.fillText('COINS ' + coins, CONFIG.canvas.width - pad, pad + 30);
+    ctx.fillText(time, CONFIG.canvas.width - pad, pad + 48);
     ctx.textAlign = 'left';
   }
 }

@@ -65,18 +65,24 @@ function boot(): void {
   let offers: Upgrade[];
   let hover: Upgrade | null;
   let muted: boolean;
+  let hurtFlashTimer: number;
+  let lastHp: number;
 
   muted = false;
+  hurtFlashTimer = 0;
+  lastHp = 0;
 
   const reset = (): void => {
     player = new Player(0, 0);
     upgrades = new UpgradeSystem();
-    combat = new Combat(upgrades, audio);
+    combat = new Combat(upgrades, audio, renderer);
     spawner = new Spawner();
     state = 'playing';
     elapsed = 0;
     offers = [];
     hover = null;
+    hurtFlashTimer = 0;
+    lastHp = player.hp;
     renderer.camera.x = player.x;
     renderer.camera.y = player.y;
   };
@@ -129,6 +135,12 @@ function boot(): void {
       spawner.update(dt, player, combat.enemies);
       combat.update(dt, player, particles);
       combat.updateOrbs(dt, player, upgrades.stats.pickupRadius, audio);
+      combat.updateCoins(dt, player, audio);
+
+      if (player.hp < lastHp) {
+        hurtFlashTimer = CONFIG.flash.hurtDuration;
+      }
+      lastHp = player.hp;
 
       if (player.pendingLevelUps > 0) {
         player.pendingLevelUps -= 1;
@@ -160,7 +172,10 @@ function boot(): void {
       if (input.wasPressed('KeyR')) reset();
     }
 
+    if (hurtFlashTimer > 0) hurtFlashTimer -= dt;
+
     particles.update(dt);
+    renderer.updateShake(dt);
 
     const lerp = CONFIG.camera.lerp;
     renderer.camera.x += (player.x - renderer.camera.x) * lerp;
@@ -191,11 +206,18 @@ function boot(): void {
       player.hp,
       player.maxHp,
       combat.kills,
+      combat.coinsCollected,
       elapsed,
       player.level,
       player.xp,
       player.xpToNext
     );
+
+    if (hurtFlashTimer > 0) {
+      const alpha = (hurtFlashTimer / CONFIG.flash.hurtDuration) * CONFIG.flash.hurtAlpha;
+      renderer.ctx.fillStyle = 'rgba(127,29,29,' + alpha.toFixed(3) + ')';
+      renderer.ctx.fillRect(0, 0, CONFIG.canvas.width, CONFIG.canvas.height);
+    }
 
     if (state === 'levelup') {
       levelUi.draw(renderer.ctx, hover);
